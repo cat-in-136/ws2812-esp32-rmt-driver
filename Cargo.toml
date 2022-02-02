@@ -1,0 +1,26 @@
+[package]
+name = "esp-rust-atom-led-test"
+version = "0.1.0"
+authors = ["cat_in_136"]
+edition = "2018"
+resolver = "2"
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"
+
+[features]
+native = ["esp-idf-sys/native"]
+
+[dependencies]
+esp-idf-sys = { version = "0.30.3", features = ["binstart"] }
+
+smart-leds = "0.3"
+ws2812-spi = "0.4"
+
+[build-dependencies]
+embuild = "0.28"
+anyhow = "1"
