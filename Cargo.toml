@@ -17,6 +17,9 @@ native = ["esp-idf-sys/native"]
 
 [dependencies]
 esp-idf-sys = { version = "0.30.3", features = ["binstart"] }
+smart-leds-trait = "0.2"
+
+smart-leds = "0.3"
 
 [build-dependencies]
 embuild = "0.28"
