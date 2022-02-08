@@ -18,7 +18,7 @@ fn main() -> ! {
     loop {
         println!("Hello, world!");
 
-        let mut rgb = hsv2rgb(Hsv {
+        let rgb = hsv2rgb(Hsv {
             hue: get_random() as u8,
             sat: 255,
             val: 8,

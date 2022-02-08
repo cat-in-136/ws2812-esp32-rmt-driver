@@ -1,6 +1,5 @@
 use esp_idf_sys::EspError;
 use esp_idf_sys::*;
-use smart_leds::Brightness;
 use smart_leds_trait::{SmartLedsWrite, RGB8};
 use std::cmp::min;
 use std::ffi::c_void;
@@ -10,10 +9,9 @@ const WS2812_TO0L_NS: u16 = 850;
 const WS2812_TO1H_NS: u16 = 800;
 const WS2812_TO1L_NS: u16 = 450;
 
-static mut WS2821_ITEM_VAL_TODO: (u32, u32) = (0, 0); // TODO
+static mut WS2821_ITEM_ENCODER: Option<Box<Ws2812RmtItemEncoder>> = None;
 
 #[repr(C)]
-#[derive(Clone)]
 struct Ws2812RmtItemEncoder {
     bit0: u32,
     bit1: u32,
@@ -70,11 +68,9 @@ unsafe extern "C" fn ws2821_rmt_adapter(
     let src_slice = std::slice::from_raw_parts(src as *const u8, src_len);
     let dest_slice = std::slice::from_raw_parts_mut(dest, src_slice.len() * 8);
 
-    let encoder = Ws2812RmtItemEncoder {
-        bit0: WS2821_ITEM_VAL_TODO.0,
-        bit1: WS2821_ITEM_VAL_TODO.1,
-    };
-    encoder.encode(src_slice, dest_slice);
+    if let Some(encoder) = &WS2821_ITEM_ENCODER {
+        encoder.encode(src_slice, dest_slice)
+    }
 
     *translated_size = src_slice.len() as _;
     *item_num = dest_slice.len() as _;
@@ -113,10 +109,10 @@ impl Ws2812Rmt {
         esp!(unsafe { rmt_driver_install(channel, 0, 0) })?;
         esp!(unsafe { rmt_translator_init(channel, Some(ws2821_rmt_adapter)) })?;
 
-        let encoder = Ws2812RmtItemEncoder::new(channel)?;
         unsafe {
-            WS2821_ITEM_VAL_TODO.0 = encoder.bit0;
-            WS2821_ITEM_VAL_TODO.1 = encoder.bit1;
+            if WS2821_ITEM_ENCODER.is_none() {
+                WS2821_ITEM_ENCODER = Some(Box::new(Ws2812RmtItemEncoder::new(channel)?));
+            }
         }
 
         Ok(Self {
