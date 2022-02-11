@@ -12,20 +12,22 @@ fn main() -> ! {
     // or else some patches to the runtime implemented by esp-idf-sys might not link properly.
     esp_idf_sys::link_patches();
 
-    let get_random = || -> u32 { unsafe { esp_random() } };
     let mut ws2812 = Ws2812Rmt::new(0, 27).unwrap();
 
-    loop {
-        println!("Hello, world!");
+    println!("Start NeoPixel rainbow!");
 
-        let rgb = hsv2rgb(Hsv {
-            hue: get_random() as u8,
+    let mut hue = unsafe { esp_random() } as u8;
+    loop {
+        let pixels = std::iter::repeat(hsv2rgb(Hsv {
+            hue,
             sat: 255,
             val: 8,
-        });
-        let pixels = [rgb; 25];
-        ws2812.write(pixels.iter().cloned()).unwrap();
+        }))
+        .take(25);
+        ws2812.write(pixels).unwrap();
 
-        sleep(Duration::from_secs(1));
+        sleep(Duration::from_millis(100));
+
+        hue = hue.wrapping_add(10);
     }
 }
