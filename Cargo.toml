@@ -1,5 +1,5 @@
 [package]
-name = "esp-rust-atom-led-test"
+name = "ws2812-esp32-rmt-smart-leds"
 version = "0.1.0"
 authors = ["cat_in_136"]
 edition = "2018"
@@ -20,6 +20,7 @@ esp-idf-sys = { version = "0.30.3", features = ["binstart"] }
 smart-leds-trait = "0.2"
 once_cell = "1"
 
+[dev-dependencies]
 smart-leds = "0.3"
 
 [build-dependencies]

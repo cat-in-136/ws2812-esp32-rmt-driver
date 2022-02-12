@@ -1,11 +1,9 @@
-use crate::smart_led_lib::Ws2812Rmt;
 use esp_idf_sys::*;
 use smart_leds::hsv::{hsv2rgb, Hsv};
 use smart_leds_trait::SmartLedsWrite;
 use std::thread::sleep;
 use std::time::Duration;
-
-mod smart_led_lib;
+use ws2812_esp32_rmt_smart_leds::Ws2812Rmt;
 
 fn main() -> ! {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
