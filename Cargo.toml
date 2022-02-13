@@ -1,7 +1,11 @@
 [package]
 name = "ws2812-esp32-rmt-smart-leds"
 version = "0.1.0"
-authors = ["cat_in_136"]
+license = "MIT"
+authors = ["@cat_in_136"]
+categories = ["embedded"]
+description = " Smart LED WS2812 driver using ESP32 RMT"
+repository = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
 edition = "2018"
 resolver = "2"
 
