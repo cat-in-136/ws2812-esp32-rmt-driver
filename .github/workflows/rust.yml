@@ -12,6 +12,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - run: mv rust-toolchain.toml rust-toolchain.toml.bak
     - name: Install Rust for Xtensa
       uses: esp-rs/xtensa-toolchain@v1
