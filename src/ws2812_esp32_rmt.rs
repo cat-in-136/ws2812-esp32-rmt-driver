@@ -10,15 +10,15 @@ const WS2812_TO0L_NS: u16 = 850;
 const WS2812_TO1H_NS: u16 = 800;
 const WS2812_TO1L_NS: u16 = 450;
 
-static WS2821_ITEM_ENCODER: OnceCell<Box<Ws2812RmtItemEncoder>> = OnceCell::new();
+static WS2821_ITEM_ENCODER: OnceCell<Box<Ws2812Esp32RmtItemEncoder>> = OnceCell::new();
 
 #[repr(C)]
-struct Ws2812RmtItemEncoder {
+struct Ws2812Esp32RmtItemEncoder {
     bit0: u32,
     bit1: u32,
 }
 
-impl Ws2812RmtItemEncoder {
+impl Ws2812Esp32RmtItemEncoder {
     fn new(channel: rmt_channel_t) -> Result<Self, EspError> {
         let mut clock_hz = 0u32;
         esp!(unsafe { rmt_get_counter_clock(channel, &mut clock_hz as *mut u32) })?;
@@ -77,12 +77,12 @@ unsafe extern "C" fn ws2821_rmt_adapter(
     *item_num = dest_slice.len() as _;
 }
 
-pub struct Ws2812Rmt {
+pub struct Ws2812Esp32Rmt {
     channel: rmt_channel_t,
     pub wait_tx_done: bool,
 }
 
-impl Ws2812Rmt {
+impl Ws2812Esp32Rmt {
     pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, EspError> {
         let channel = channel_num as rmt_channel_t;
         let gpio_num = gpio_num as gpio_num_t;
@@ -111,7 +111,7 @@ impl Ws2812Rmt {
         esp!(unsafe { rmt_translator_init(channel, Some(ws2821_rmt_adapter)) })?;
 
         let _encoder = WS2821_ITEM_ENCODER
-            .get_or_try_init(|| Ws2812RmtItemEncoder::new(channel).map(&Box::new))?;
+            .get_or_try_init(|| Ws2812Esp32RmtItemEncoder::new(channel).map(&Box::new))?;
 
         Ok(Self {
             channel,
@@ -120,13 +120,13 @@ impl Ws2812Rmt {
     }
 }
 
-impl Drop for Ws2812Rmt {
+impl Drop for Ws2812Esp32Rmt {
     fn drop(&mut self) {
         esp!(unsafe { rmt_driver_uninstall(self.channel) }).unwrap()
     }
 }
 
-impl SmartLedsWrite for Ws2812Rmt {
+impl SmartLedsWrite for Ws2812Esp32Rmt {
     type Error = EspError;
     type Color = RGB8;
 
