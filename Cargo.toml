@@ -11,20 +11,12 @@ repository = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
 edition = "2018"
 resolver = "2"
 
-[profile.release]
-opt-level = "s"
-
-[profile.dev]
-debug = true # Symbols are nice and they don't increase the size on Flash
-opt-level = "z"
-
-[features]
-native = ["esp-idf-sys/native"]
-
 [dependencies]
-esp-idf-sys = { version = "0.30", features = ["binstart"] }
 smart-leds-trait = "0.2"
 once_cell = "1"
+
+[target.'cfg(target_vendor = "espressif")'.dependencies]
+esp-idf-sys = { version = "0.30", features = ["binstart"] }
 
 [dev-dependencies]
 smart-leds = "0.3"
