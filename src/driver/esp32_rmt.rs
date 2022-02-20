@@ -75,13 +75,17 @@ unsafe extern "C" fn ws2821_rmt_adapter(
     *item_num = dest_slice.len() as _;
 }
 
+#[derive(thiserror::Error, Debug)]
+#[error(transparent)]
+pub struct Ws2812Esp32RmtDriverError(#[from] EspError);
+
 pub struct Ws2812Esp32RmtDriver {
     channel: rmt_channel_t,
     pub wait_tx_done: bool,
 }
 
 impl Ws2812Esp32RmtDriver {
-    pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, EspError> {
+    pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let channel = channel_num as rmt_channel_t;
         let gpio_num = gpio_num as gpio_num_t;
         let clk_div = 2;
@@ -117,7 +121,7 @@ impl Ws2812Esp32RmtDriver {
         })
     }
 
-    pub fn write(&mut self, grb_pixels: &[u8]) -> Result<(), EspError> {
+    pub fn write(&mut self, grb_pixels: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
         esp!(unsafe {
             let grb_ptr = grb_pixels.as_ptr();
             rmt_write_sample(
@@ -126,7 +130,8 @@ impl Ws2812Esp32RmtDriver {
                 grb_pixels.len() as u32,
                 self.wait_tx_done,
             )
-        })
+        })?;
+        Ok(())
     }
 }
 

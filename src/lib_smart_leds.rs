@@ -1,21 +1,19 @@
-use crate::driver::Ws2812Esp32RmtDriver;
+use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use smart_leds_trait::{SmartLedsWrite, RGB8};
-
-use esp_idf_sys::*;
 
 pub struct Ws2812Esp32Rmt {
     driver: Ws2812Esp32RmtDriver,
 }
 
 impl Ws2812Esp32Rmt {
-    pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, EspError> {
+    pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::new(channel_num, gpio_num)?;
         Ok(Self { driver })
     }
 }
 
 impl SmartLedsWrite for Ws2812Esp32Rmt {
-    type Error = EspError;
+    type Error = Ws2812Esp32RmtDriverError;
     type Color = RGB8;
 
     fn write<T, I>(&mut self, iterator: T) -> Result<(), Self::Error>

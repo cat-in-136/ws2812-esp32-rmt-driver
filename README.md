@@ -41,3 +41,14 @@ Make ensure `esp` toolchain is available and `xtensa-esp32-elf-clang` is in your
 $ cargo build
 $ cargo espflush
 ```
+
+## Development
+
+To run the test locally, specify the local toolchain (`stable`, `nightly`, etc...) and target explicitly and disable
+example builds (specify `--lib`)
+.
+
+```console
+$ cargo +stable test --target x86_64-unknown-linux-gnu --lib
+```
+
