@@ -31,3 +31,13 @@ impl SmartLedsWrite for Ws2812Esp32Rmt {
         self.driver.write(&grb)
     }
 }
+
+#[test]
+#[cfg(not(target_vendor = "espressif"))]
+fn test_ws2812_esp32_rmt_smart_leds() {
+    let sample_data = [RGB8::new(0x00, 0x01, 0x02), RGB8::new(0x03, 0x04, 0x05)];
+    let expected_values: [u8; 6] = [0x01, 0x00, 0x02, 0x04, 0x03, 0x05];
+    let mut ws2812 = Ws2812Esp32Rmt::new(0, 27).unwrap();
+    ws2812.write(sample_data.iter().cloned()).unwrap();
+    assert_eq!(ws2812.driver.grb_pixels_debug().unwrap(), &expected_values);
+}
