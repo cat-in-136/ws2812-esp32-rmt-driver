@@ -1,4 +1,5 @@
 mod driver;
+mod lib_embedded_graphics;
 mod lib_smart_leds;
 
 pub use lib_smart_leds::Ws2812Esp32Rmt;
