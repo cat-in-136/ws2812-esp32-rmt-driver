@@ -33,3 +33,5 @@ jobs:
       run: cargo build --example=m5atom --verbose
     - name: Test
       run: cargo +stable test --target x86_64-unknown-linux-gnu --lib
+    - name: Publish (Dry run)
+      run: cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
