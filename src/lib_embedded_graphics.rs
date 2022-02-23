@@ -6,29 +6,25 @@ use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
 use std::marker::PhantomData;
 
-pub trait LedPixelShape<C: LedPixelColor> {
-    fn data_len() -> usize {
+pub trait LedPixelShape {
+    fn pixel_len() -> usize {
         let size = Self::size();
-        (size.width * size.height) as usize * C::BPP
+        (size.width * size.height) as usize
     }
     fn size() -> Size;
-    fn convert(point: Point) -> Option<usize>;
+    fn pixel_index(point: Point) -> Option<usize>;
 }
 
-pub struct LedPixelMatrixShape<C: LedPixelColor, const W: usize, const H: usize> {
-    _phantom: PhantomData<C>,
-}
+pub struct LedPixelMatrix<const W: usize, const H: usize> {}
 
-impl<C: LedPixelColor, const W: usize, const H: usize> LedPixelShape<C>
-    for LedPixelMatrixShape<C, W, H>
-{
+impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
     fn size() -> Size {
         Size::new(W as u32, H as u32)
     }
 
-    fn convert(point: Point) -> Option<usize> {
+    fn pixel_index(point: Point) -> Option<usize> {
         if (0..W as i32).contains(&point.x) && (0..H as i32).contains(&point.y) {
-            Some(C::BPP * (point.x + point.y * W as i32) as usize)
+            Some((point.x + point.y * W as i32) as usize)
         } else {
             None
         }
@@ -39,7 +35,7 @@ pub struct LedPixelDrawTarget<CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
-    S: LedPixelShape<CDev>,
+    S: LedPixelShape,
 {
     driver: Ws2812Esp32RmtDriver,
     data: Vec<u8>,
@@ -51,11 +47,13 @@ impl<CDraw, CDev, S> LedPixelDrawTarget<CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
-    S: LedPixelShape<CDev>,
+    S: LedPixelShape,
 {
     pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::new(channel_num, gpio_num)?;
-        let data = std::iter::repeat(0).take(S::data_len()).collect::<Vec<_>>();
+        let data = std::iter::repeat(0)
+            .take(S::pixel_len() * CDev::BPP)
+            .collect::<Vec<_>>();
         Ok(Self {
             driver,
             data,
@@ -83,7 +81,7 @@ impl<CDraw, CDev, S> OriginDimensions for LedPixelDrawTarget<CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
-    S: LedPixelShape<CDev>,
+    S: LedPixelShape,
 {
     fn size(&self) -> Size {
         S::size()
@@ -94,7 +92,7 @@ impl<CDraw, CDev, S> DrawTarget for LedPixelDrawTarget<CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
-    S: LedPixelShape<CDev>,
+    S: LedPixelShape,
 {
     type Color = CDraw;
     type Error = Ws2812Esp32RmtDriverError;
@@ -104,7 +102,8 @@ where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
         for Pixel(point, color) in pixels {
-            if let Some(index) = S::convert(point) {
+            if let Some(pixel_index) = S::pixel_index(point) {
+                let index = pixel_index * CDev::BPP;
                 let color_device = CDev::from(color);
                 for (offset, v) in color_device.as_ref().iter().enumerate() {
                     self.data[index + offset] = *v;
@@ -131,9 +130,7 @@ impl From<Rgb888> for Ws2812Grb24Color {
     }
 }
 
-type Ws2812MatrixShape<const W: usize, const H: usize> =
-    LedPixelMatrixShape<Ws2812Grb24Color, W, H>;
-type Ws2812StripShape<const L: usize> = Ws2812MatrixShape<L, 1>;
+type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
 type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, Ws2812Grb24Color, S>;
 
 #[cfg(test)]
@@ -141,38 +138,47 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_ws2812matrix_shape() {
-        assert_eq!(Ws2812MatrixShape::<10, 5>::data_len(), 150);
-        assert_eq!(Ws2812MatrixShape::<10, 5>::size(), Size::new(10, 5));
+    fn test_led_pixel_matrix() {
+        assert_eq!(LedPixelMatrix::<10, 5>::pixel_len(), 50);
+        assert_eq!(LedPixelMatrix::<10, 5>::size(), Size::new(10, 5));
         assert_eq!(
-            Ws2812MatrixShape::<10, 5>::convert(Point::new(0, 0)),
+            LedPixelMatrix::<10, 5>::pixel_index(Point::new(0, 0)),
             Some(0)
         );
         assert_eq!(
-            Ws2812MatrixShape::<10, 5>::convert(Point::new(9, 4)),
-            Some(147)
+            LedPixelMatrix::<10, 5>::pixel_index(Point::new(9, 4)),
+            Some(49)
         );
-        assert_eq!(Ws2812MatrixShape::<10, 5>::convert(Point::new(-1, 0)), None);
-        assert_eq!(Ws2812MatrixShape::<10, 5>::convert(Point::new(0, -1)), None);
-        assert_eq!(Ws2812MatrixShape::<10, 5>::convert(Point::new(10, 4)), None);
-        assert_eq!(Ws2812MatrixShape::<10, 5>::convert(Point::new(9, 5)), None);
+        assert_eq!(
+            LedPixelMatrix::<10, 5>::pixel_index(Point::new(-1, 0)),
+            None
+        );
+        assert_eq!(
+            LedPixelMatrix::<10, 5>::pixel_index(Point::new(0, -1)),
+            None
+        );
+        assert_eq!(
+            LedPixelMatrix::<10, 5>::pixel_index(Point::new(10, 4)),
+            None
+        );
+        assert_eq!(LedPixelMatrix::<10, 5>::pixel_index(Point::new(9, 5)), None);
     }
 
     #[test]
-    fn test_ws2812strip_shape() {
-        assert_eq!(Ws2812StripShape::<10>::data_len(), 30);
-        assert_eq!(Ws2812StripShape::<10>::size(), Size::new(10, 1));
-        assert_eq!(Ws2812StripShape::<10>::convert(Point::new(0, 0)), Some(0));
-        assert_eq!(Ws2812StripShape::<10>::convert(Point::new(9, 0)), Some(27));
-        assert_eq!(Ws2812StripShape::<10>::convert(Point::new(-1, 0)), None);
-        assert_eq!(Ws2812StripShape::<10>::convert(Point::new(0, -1)), None);
-        assert_eq!(Ws2812StripShape::<10>::convert(Point::new(10, 0)), None);
-        assert_eq!(Ws2812StripShape::<10>::convert(Point::new(9, 1)), None);
+    fn test_led_pixel_strip() {
+        assert_eq!(LedPixelStrip::<10>::pixel_len(), 10);
+        assert_eq!(LedPixelStrip::<10>::size(), Size::new(10, 1));
+        assert_eq!(LedPixelStrip::<10>::pixel_index(Point::new(0, 0)), Some(0));
+        assert_eq!(LedPixelStrip::<10>::pixel_index(Point::new(9, 0)), Some(9));
+        assert_eq!(LedPixelStrip::<10>::pixel_index(Point::new(-1, 0)), None);
+        assert_eq!(LedPixelStrip::<10>::pixel_index(Point::new(0, -1)), None);
+        assert_eq!(LedPixelStrip::<10>::pixel_index(Point::new(10, 0)), None);
+        assert_eq!(LedPixelStrip::<10>::pixel_index(Point::new(9, 1)), None);
     }
 
     #[test]
     fn test_ws2812draw_target_new() {
-        let draw = Ws2812DrawTarget::<Ws2812MatrixShape<10, 5>>::new(0, 27).unwrap();
+        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(0, 27).unwrap();
         assert_eq!(draw.changed, true);
         assert_eq!(
             draw.data,
@@ -182,7 +188,7 @@ mod test {
 
     #[test]
     fn test_ws2812draw_target_draw() {
-        let mut draw = Ws2812DrawTarget::<Ws2812MatrixShape<10, 5>>::new(0, 27).unwrap();
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(0, 27).unwrap();
 
         draw.draw_iter(
             [
@@ -219,7 +225,7 @@ mod test {
 
     #[test]
     fn test_ws2812draw_target_flush() {
-        let mut draw = Ws2812DrawTarget::<Ws2812MatrixShape<10, 5>>::new(0, 27).unwrap();
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(0, 27).unwrap();
 
         draw.changed = true;
         draw.data.fill(0x01);
