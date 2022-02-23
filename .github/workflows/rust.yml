@@ -34,4 +34,6 @@ jobs:
     - name: Test
       run: cargo +stable test --target x86_64-unknown-linux-gnu --lib
     - name: Publish (Dry run)
-      run: cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
+      run: |
+        rm -rf install-rust-toolchain.sh rust-* xtensa-esp32-elf-llvm*
+        cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
