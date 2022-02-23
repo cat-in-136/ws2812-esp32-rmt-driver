@@ -1,3 +1,4 @@
+use crate::driver::core::{LedPixelColor, Ws2812Grb24Color};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use smart_leds_trait::{SmartLedsWrite, RGB8};
 
@@ -12,6 +13,12 @@ impl Ws2812Esp32Rmt {
     }
 }
 
+impl From<RGB8> for Ws2812Grb24Color {
+    fn from(rgb8: RGB8) -> Self {
+        Self::new_with_rgb(rgb8.r, rgb8.g, rgb8.b)
+    }
+}
+
 impl SmartLedsWrite for Ws2812Esp32Rmt {
     type Error = Ws2812Esp32RmtDriverError;
     type Color = RGB8;
@@ -21,14 +28,8 @@ impl SmartLedsWrite for Ws2812Esp32Rmt {
         T: Iterator<Item = I>,
         I: Into<Self::Color>,
     {
-        let grb = iterator
-            .flat_map(|v| {
-                let rgb = v.into();
-                [rgb.g, rgb.r, rgb.b]
-            })
-            .collect::<Vec<_>>();
-
-        self.driver.write(&grb)
+        let iter = iterator.map(|v| Ws2812Grb24Color::from(v.into()));
+        self.driver.write_colors(iter)
     }
 }
 

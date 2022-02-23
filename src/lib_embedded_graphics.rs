@@ -1,3 +1,4 @@
+use crate::driver::core::{LedPixelColor, Ws2812Grb24Color};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
@@ -5,48 +6,21 @@ use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
 use std::marker::PhantomData;
 
-pub trait ColorValueConverter<C: RgbColor> {
-    const BPP: usize;
-    fn convert(color: C, i: usize) -> Option<u8>;
-}
-
-struct Ws2812Grb24ColorValueConverter<C: RgbColor> {
-    _phantom_color: PhantomData<C>,
-}
-
-impl<C: RgbColor> ColorValueConverter<C> for Ws2812Grb24ColorValueConverter<C> {
-    const BPP: usize = 3;
-    fn convert(color: C, i: usize) -> Option<u8> {
-        match i {
-            0 => Some(color.g()),
-            1 => Some(color.r()),
-            2 => Some(color.b()),
-            _ => None,
-        }
-    }
-}
-
-pub trait LedPixelShape<C: RgbColor, CC: ColorValueConverter<C>> {
+pub trait LedPixelShape<C: LedPixelColor> {
     fn data_len() -> usize {
         let size = Self::size();
-        (size.width * size.height) as usize * CC::BPP
+        (size.width * size.height) as usize * C::BPP
     }
     fn size() -> Size;
     fn convert(point: Point) -> Option<usize>;
 }
 
-pub struct LedPixelMatrixShape<
-    C: RgbColor,
-    CC: ColorValueConverter<C>,
-    const W: usize,
-    const H: usize,
-> {
-    _phantom_color: PhantomData<C>,
-    _phantom_converter: PhantomData<CC>,
+pub struct LedPixelMatrixShape<C: LedPixelColor, const W: usize, const H: usize> {
+    _phantom: PhantomData<C>,
 }
 
-impl<C: RgbColor, CC: ColorValueConverter<C>, const W: usize, const H: usize> LedPixelShape<C, CC>
-    for LedPixelMatrixShape<C, CC, W, H>
+impl<C: LedPixelColor, const W: usize, const H: usize> LedPixelShape<C>
+    for LedPixelMatrixShape<C, W, H>
 {
     fn size() -> Size {
         Size::new(W as u32, H as u32)
@@ -54,24 +28,30 @@ impl<C: RgbColor, CC: ColorValueConverter<C>, const W: usize, const H: usize> Le
 
     fn convert(point: Point) -> Option<usize> {
         if (0..W as i32).contains(&point.x) && (0..H as i32).contains(&point.y) {
-            Some(CC::BPP * (point.x + point.y * W as i32) as usize)
+            Some(C::BPP * (point.x + point.y * W as i32) as usize)
         } else {
             None
         }
     }
 }
 
-pub struct LedPixelDrawTarget<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>> {
+pub struct LedPixelDrawTarget<CDraw, CDev, S>
+where
+    CDraw: RgbColor,
+    CDev: LedPixelColor + From<CDraw>,
+    S: LedPixelShape<CDev>,
+{
     driver: Ws2812Esp32RmtDriver,
     data: Vec<u8>,
     changed: bool,
-    _phantom_color: PhantomData<C>,
-    _phantom_converter: PhantomData<CC>,
-    _phantom_shape: PhantomData<S>,
+    _phantom: PhantomData<(CDraw, CDev, S)>,
 }
 
-impl<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>>
-    LedPixelDrawTarget<C, CC, S>
+impl<CDraw, CDev, S> LedPixelDrawTarget<CDraw, CDev, S>
+where
+    CDraw: RgbColor,
+    CDev: LedPixelColor + From<CDraw>,
+    S: LedPixelShape<CDev>,
 {
     pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::new(channel_num, gpio_num)?;
@@ -80,9 +60,7 @@ impl<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>>
             driver,
             data,
             changed: true,
-            _phantom_color: Default::default(),
-            _phantom_converter: Default::default(),
-            _phantom_shape: Default::default(),
+            _phantom: Default::default(),
         })
     }
 
@@ -101,18 +79,24 @@ impl<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>>
     }
 }
 
-impl<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>> OriginDimensions
-    for LedPixelDrawTarget<C, CC, S>
+impl<CDraw, CDev, S> OriginDimensions for LedPixelDrawTarget<CDraw, CDev, S>
+where
+    CDraw: RgbColor,
+    CDev: LedPixelColor + From<CDraw>,
+    S: LedPixelShape<CDev>,
 {
     fn size(&self) -> Size {
         S::size()
     }
 }
 
-impl<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>> DrawTarget
-    for LedPixelDrawTarget<C, CC, S>
+impl<CDraw, CDev, S> DrawTarget for LedPixelDrawTarget<CDraw, CDev, S>
+where
+    CDraw: RgbColor,
+    CDev: LedPixelColor + From<CDraw>,
+    S: LedPixelShape<CDev>,
 {
-    type Color = C;
+    type Color = CDraw;
     type Error = Ws2812Esp32RmtDriverError;
 
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
@@ -121,10 +105,9 @@ impl<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>> DrawTarge
     {
         for Pixel(point, color) in pixels {
             if let Some(index) = S::convert(point) {
-                for offset in 0..CC::BPP {
-                    if let Some(v) = CC::convert(color, offset) {
-                        self.data[index + offset] = v;
-                    }
+                let color_device = CDev::from(color);
+                for (offset, v) in color_device.as_ref().iter().enumerate() {
+                    self.data[index + offset] = *v;
                 }
                 self.changed = true;
             }
@@ -133,21 +116,25 @@ impl<C: RgbColor, CC: ColorValueConverter<C>, S: LedPixelShape<C, CC>> DrawTarge
     }
 
     fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        let c = (0..CC::BPP)
-            .map(|i| CC::convert(color, i).unwrap())
-            .collect::<Vec<_>>();
+        let c = CDev::from(color);
         for (index, v) in self.data.iter_mut().enumerate() {
-            *v = c[index % CC::BPP];
+            *v = c.as_ref()[index % CDev::BPP];
         }
         self.changed = true;
         Ok(())
     }
 }
 
+impl From<Rgb888> for Ws2812Grb24Color {
+    fn from(x: Rgb888) -> Self {
+        Self::new_with_rgb(x.r(), x.g(), x.b())
+    }
+}
+
 type Ws2812MatrixShape<const W: usize, const H: usize> =
-    LedPixelMatrixShape<Rgb888, Ws2812Grb24ColorValueConverter<Rgb888>, W, H>;
+    LedPixelMatrixShape<Ws2812Grb24Color, W, H>;
 type Ws2812StripShape<const L: usize> = Ws2812MatrixShape<L, 1>;
-type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, Ws2812Grb24ColorValueConverter<Rgb888>, S>;
+type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, Ws2812Grb24Color, S>;
 
 #[cfg(test)]
 mod test {
