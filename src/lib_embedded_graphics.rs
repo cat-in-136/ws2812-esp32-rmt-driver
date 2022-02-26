@@ -136,8 +136,8 @@ impl<
     }
 }
 
-type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
-type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, LedPixelColorGrb24, S>;
+pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
+pub type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, LedPixelColorGrb24, S>;
 
 #[cfg(test)]
 mod test {
