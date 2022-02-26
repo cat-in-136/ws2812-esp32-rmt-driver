@@ -1,4 +1,4 @@
-use crate::driver::core::{LedPixelColor, Ws2812Grb24Color};
+use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
@@ -124,14 +124,20 @@ where
     }
 }
 
-impl From<Rgb888> for Ws2812Grb24Color {
+impl<
+    const N: usize,
+    const R_ORDER: usize,
+    const G_ORDER: usize,
+    const B_ORDER: usize,
+    const W_ORDER: usize,
+> From<Rgb888> for LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER> {
     fn from(x: Rgb888) -> Self {
         Self::new_with_rgb(x.r(), x.g(), x.b())
     }
 }
 
 type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
-type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, Ws2812Grb24Color, S>;
+type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, LedPixelColorGrb24, S>;
 
 #[cfg(test)]
 mod test {

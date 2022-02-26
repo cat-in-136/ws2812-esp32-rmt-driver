@@ -1,4 +1,4 @@
-use crate::driver::core::Ws2812Grb24Color;
+use crate::driver::color::LedPixelColorGrb24;
 use esp_idf_sys::*;
 use once_cell::sync::OnceCell;
 use std::cmp::min;
@@ -137,7 +137,7 @@ impl Ws2812Esp32RmtDriver {
 
     pub fn write_colors<I>(&mut self, iterator: I) -> Result<(), Ws2812Esp32RmtDriverError>
     where
-        I: IntoIterator<Item = Ws2812Grb24Color>,
+        I: IntoIterator<Item =LedPixelColorGrb24>,
     {
         let mut vec = Vec::new();
         for color in iterator {
