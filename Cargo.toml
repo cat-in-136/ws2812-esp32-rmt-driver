@@ -11,8 +11,13 @@ repository = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
 edition = "2018"
 resolver = "2"
 
+[features]
+default = ["smart-leds-trait", "embedded-graphics-core"]
+unstable = []
+
 [dependencies]
-smart-leds-trait = "0.2"
+smart-leds-trait = { version = "0.2", optional = true }
+embedded-graphics-core = { version = "0.3", optional = true }
 once_cell = "1"
 thiserror = "1"
 
@@ -21,6 +26,7 @@ esp-idf-sys = { version = "0.30", features = ["binstart"] }
 
 [dev-dependencies]
 smart-leds = "0.3"
+embedded-graphics = "0.7"
 
 [build-dependencies]
 embuild = "0.28"

@@ -2,6 +2,10 @@
 
 A rust driver library to control WS2812B (NeoPixel) RGB LED pixels/strips using ESP32 RMT (Remote Control) module.
 
+![Rust](https://github.com/cat-in-136/ws2812-esp32-rmt-driver/workflows/Rust/badge.svg)
+[![cargo-generate-rpm at crates.io](https://img.shields.io/crates/v/ws2812-esp32-rmt-driver.svg)](https://crates.io/crates/cargo-generate-rpm)
+[![API](https://docs.rs/ws2812-esp32-rmt-driver/badge.svg)](https://docs.rs/ws2812-esp32-rmt-driver)
+
 By disabling the carrier generator of [the RMT's transmitter][rmt]
 , it can be used as just a PWM signal generator for [WS2812B data signal][ws2812b-datasheet]. This control way is the
 same as major Arduino/C++ library such as [FastLED](https://github.com/FastLED/FastLED),
@@ -41,6 +45,16 @@ Make ensure `esp` toolchain is available and `xtensa-esp32-elf-clang` is in your
 $ cargo build
 $ cargo espflush
 ```
+
+## Features
+
+* `features = ["unstable"]` to enable low-level driver API `ws2812_esp32_rmt_driver::driver`
+* `features = ["embedded-graphics-core", "unstable"]` to enable embedded-graphics
+  API `ws2812_esp32_rmt_driver::lib_embedded_graphics`.
+* `features = ["smart-leds"]` or default to enable minimum smart-leds API.
+* `features = ["smart-leds", "unstable"]` to enable detailed smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`.
+
+
 
 ## Development
 

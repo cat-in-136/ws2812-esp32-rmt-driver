@@ -1,3 +1,4 @@
+pub mod color;
 #[cfg(target_vendor = "espressif")]
 mod esp32_rmt;
 #[cfg(not(target_vendor = "espressif"))]
