@@ -39,6 +39,7 @@ where
 {
     driver: Ws2812Esp32RmtDriver,
     data: Vec<u8>,
+    brightness: u8,
     changed: bool,
     _phantom: PhantomData<(CDraw, CDev, S)>,
 }
@@ -57,9 +58,21 @@ where
         Ok(Self {
             driver,
             data,
+            brightness: u8::MAX,
             changed: true,
             _phantom: Default::default(),
         })
+    }
+
+    #[inline]
+    pub fn set_brightness(&mut self, brightness: u8) {
+        self.brightness = brightness;
+        self.changed = true;
+    }
+
+    #[inline]
+    pub fn brightness(&self) -> u8 {
+        self.brightness
     }
 
     pub fn clear_with_black(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
@@ -83,6 +96,7 @@ where
     CDev: LedPixelColor + From<CDraw>,
     S: LedPixelShape,
 {
+    #[inline]
     fn size(&self) -> Size {
         S::size()
     }
@@ -104,7 +118,7 @@ where
         for Pixel(point, color) in pixels {
             if let Some(pixel_index) = S::pixel_index(point) {
                 let index = pixel_index * CDev::BPP;
-                let color_device = CDev::from(color);
+                let color_device = CDev::from(color).brightness(self.brightness);
                 for (offset, v) in color_device.as_ref().iter().enumerate() {
                     self.data[index + offset] = *v;
                 }
@@ -115,7 +129,7 @@ where
     }
 
     fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        let c = CDev::from(color);
+        let c = CDev::from(color).brightness(self.brightness);
         for (index, v) in self.data.iter_mut().enumerate() {
             *v = c.as_ref()[index % CDev::BPP];
         }
@@ -125,12 +139,13 @@ where
 }
 
 impl<
-    const N: usize,
-    const R_ORDER: usize,
-    const G_ORDER: usize,
-    const B_ORDER: usize,
-    const W_ORDER: usize,
-> From<Rgb888> for LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER> {
+        const N: usize,
+        const R_ORDER: usize,
+        const G_ORDER: usize,
+        const B_ORDER: usize,
+        const W_ORDER: usize,
+    > From<Rgb888> for LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>
+{
     fn from(x: Rgb888) -> Self {
         Self::new_with_rgb(x.r(), x.g(), x.b())
     }
