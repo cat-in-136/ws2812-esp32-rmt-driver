@@ -14,12 +14,13 @@ impl Ws2812Esp32Rmt {
 }
 
 impl<
-    const N: usize,
-    const R_ORDER: usize,
-    const G_ORDER: usize,
-    const B_ORDER: usize,
-    const W_ORDER: usize,
-> From<RGB8> for LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER> {
+        const N: usize,
+        const R_ORDER: usize,
+        const G_ORDER: usize,
+        const B_ORDER: usize,
+        const W_ORDER: usize,
+    > From<RGB8> for LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>
+{
     fn from(x: RGB8) -> Self {
         Self::new_with_rgb(x.r, x.g, x.b)
     }

@@ -25,7 +25,7 @@ impl Ws2812Esp32RmtDriver {
 
     pub fn write_colors<I>(&mut self, iterator: I) -> Result<(), Ws2812Esp32RmtDriverError>
     where
-        I: IntoIterator<Item =LedPixelColorGrb24>,
+        I: IntoIterator<Item = LedPixelColorGrb24>,
     {
         let mut vec = Vec::new();
         for color in iterator {
