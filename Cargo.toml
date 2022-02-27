@@ -26,6 +26,7 @@ esp-idf-sys = { version = "0.30", features = ["binstart"] }
 
 [dev-dependencies]
 smart-leds = "0.3"
+embedded-graphics = "0.7"
 
 [build-dependencies]
 embuild = "0.28"

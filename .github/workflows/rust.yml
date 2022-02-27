@@ -30,7 +30,7 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Build example m5atom
-      run: cargo build --example=m5atom --verbose
+      run: cargo build --examples --all-features
     - name: Test
       run: |
         cargo +stable test --target x86_64-unknown-linux-gnu --lib
