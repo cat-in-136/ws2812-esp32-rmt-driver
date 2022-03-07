@@ -1,3 +1,5 @@
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+
 #[cfg(feature = "unstable")]
 pub mod driver;
 #[cfg(not(feature = "unstable"))]

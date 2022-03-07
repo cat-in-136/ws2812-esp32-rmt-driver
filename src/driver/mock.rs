@@ -1,6 +1,7 @@
 use crate::driver::color::LedPixelColor;
 use crate::driver::color::LedPixelColorGrb24;
 
+/// WS2812 ESP32 RMT Driver error.
 #[derive(thiserror::Error, Debug)]
 #[error("mock Ws2812Esp32RmtDriverError")]
 pub struct Ws2812Esp32RmtDriverError;

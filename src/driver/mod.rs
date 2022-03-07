@@ -1,3 +1,5 @@
+//! Low-level LED pixel driver API.
+
 pub mod color;
 #[cfg(target_vendor = "espressif")]
 mod esp32_rmt;

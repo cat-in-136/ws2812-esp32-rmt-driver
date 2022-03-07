@@ -76,6 +76,7 @@ unsafe extern "C" fn ws2821_rmt_adapter(
     *item_num = dest_slice.len() as _;
 }
 
+/// WS2812 ESP32 RMT Driver error.
 #[derive(thiserror::Error, Debug)]
 #[error(transparent)]
 pub struct Ws2812Esp32RmtDriverError(#[from] EspError);

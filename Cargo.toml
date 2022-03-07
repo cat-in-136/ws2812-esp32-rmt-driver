@@ -31,3 +31,7 @@ embedded-graphics = "0.7"
 [build-dependencies]
 embuild = "0.28"
 anyhow = "1"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
