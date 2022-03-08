@@ -3,7 +3,7 @@
 A rust driver library to control WS2812B (NeoPixel) RGB LED pixels/strips using ESP32 RMT (Remote Control) module.
 
 ![Rust](https://github.com/cat-in-136/ws2812-esp32-rmt-driver/workflows/Rust/badge.svg)
-[![cargo-generate-rpm at crates.io](https://img.shields.io/crates/v/ws2812-esp32-rmt-driver.svg)](https://crates.io/crates/cargo-generate-rpm)
+[![ws2812-esp32-rmt-driver at crates.io](https://img.shields.io/crates/v/ws2812-esp32-rmt-driver.svg)](https://crates.io/crates/ws2812-esp32-rmt-driver)
 [![API](https://docs.rs/ws2812-esp32-rmt-driver/badge.svg)](https://docs.rs/ws2812-esp32-rmt-driver)
 
 By disabling the carrier generator of [the RMT's transmitter][rmt]

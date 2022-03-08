@@ -1,13 +1,26 @@
+//! device-dependant LED pixel colors
+
+/// LED pixel color trait
 pub trait LedPixelColor:
     Ord + PartialOrd + Eq + PartialEq + Clone + AsRef<[u8]> + AsMut<[u8]>
 {
+    /// byte per pixel. e.g. 3 for typical RGB.
     const BPP: usize;
+    /// Creates with RGB (Red-Green-Blue) value.
     fn new_with_rgb(r: u8, g: u8, b: u8) -> Self;
+    /// Creates with RGBW (Red-Green-Blue, and White) value.
     fn new_with_rgbw(r: u8, g: u8, b: u8, w: u8) -> Self;
+    /// Returns Red channel value
     fn r(&self) -> u8;
+    /// Returns Green channel value
     fn g(&self) -> u8;
+    /// Returns Blue channel value
     fn b(&self) -> u8;
+    /// Returns White channel value
     fn w(&self) -> u8;
+
+    /// Returns brightness-adjusted color.
+    /// Each channel values of the returned shall be scaled down to `(brightness + 1) / 256`.
     #[inline]
     fn brightness(&self, brightness: u8) -> Self {
         Self::new_with_rgbw(
@@ -19,6 +32,21 @@ pub trait LedPixelColor:
     }
 }
 
+/// LED pixel color struct made with an `N`-length `u8` array.
+///
+/// * `N` - Byte per pixel. equals to [`BPP`](#associatedconstant.BPP).
+/// * `R_ORDER` - Index of the Red. Specify the value larger than `N - 1` if absent.
+/// * `G_ORDER` - Index of the Green. Specify the value larger than `N - 1` if absent.
+/// * `B_ORDER` - Index of the Blue. Specify the value larger than `N - 1` if absent.
+/// * `W_ORDER` - Index of the White. Specify the value larger than `N - 1` if absent.
+///
+/// # Examples
+///
+/// ```
+/// let color = LedPixelColorImpl::<3, 1, 0, 2, 255>::new_with_rgb(1, 2, 3);
+/// assert_eq!(color.as_ref(), [2, 1, 3]);
+/// assert_eq!((color.r(), color.g(), color.b(), color.w()), (1, 2, 3, 0));
+/// ```
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Hash)]
 #[repr(transparent)]
 pub struct LedPixelColorImpl<
@@ -83,6 +111,7 @@ impl<
         const W_ORDER: usize,
     > Default for LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>
 {
+    /// Returns the black color (All LED OFF)
     #[inline]
     fn default() -> Self {
         Self([0; N])
@@ -147,6 +176,9 @@ fn test_led_pixel_color_brightness() {
     );
 }
 
+/// 24bit GRB LED pixel color (Typical RGB LED (WS2812B/SK6812) pixel color)
 pub type LedPixelColorGrb24 = LedPixelColorImpl<3, 1, 0, 2, 255>;
+/// 32bit RGBW LED pixel color
 pub type LedPixelColorRgbw32 = LedPixelColorImpl<4, 0, 1, 2, 3>;
+/// 32bit GRBW LED pixel color
 pub type LedPixelColorGrbw32 = LedPixelColorImpl<4, 1, 0, 2, 3>;

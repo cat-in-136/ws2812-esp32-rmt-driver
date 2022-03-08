@@ -76,16 +76,28 @@ unsafe extern "C" fn ws2821_rmt_adapter(
     *item_num = dest_slice.len() as _;
 }
 
+/// WS2812 ESP32 RMT Driver error.
 #[derive(thiserror::Error, Debug)]
 #[error(transparent)]
 pub struct Ws2812Esp32RmtDriverError(#[from] EspError);
 
+/// Low-level WS2812 ESP32 RMT driver.
 pub struct Ws2812Esp32RmtDriver {
+    /// The RMT channel ID.
     channel: rmt_channel_t,
+    /// Whether wait for tx done
     pub wait_tx_done: bool,
 }
 
 impl Ws2812Esp32RmtDriver {
+    /// Creates a Low-level WS2812 ESP32 RMT driver.
+    ///
+    /// RMT driver of `channel_num` shall be initialized and installed for `gpio_num`.
+    /// `channel_num` shall be different between different `gpio_num`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the RMT driver initialization failed.
     pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let channel = channel_num as rmt_channel_t;
         let gpio_num = gpio_num as gpio_num_t;
@@ -122,6 +134,11 @@ impl Ws2812Esp32RmtDriver {
         })
     }
 
+    /// Writes GRB pixel binary slice.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an RMT driver error occurred.
     pub fn write(&mut self, grb_pixels: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
         esp!(unsafe {
             let grb_ptr = grb_pixels.as_ptr();
@@ -135,6 +152,11 @@ impl Ws2812Esp32RmtDriver {
         Ok(())
     }
 
+    /// Writes GRB pixel binary with converting into `LedPixelColorGrg24`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an RMT driver error occurred.
     pub fn write_colors<I>(&mut self, iterator: I) -> Result<(), Ws2812Esp32RmtDriverError>
     where
         I: IntoIterator<Item = LedPixelColorGrb24>,
@@ -150,6 +172,7 @@ impl Ws2812Esp32RmtDriver {
 }
 
 impl Drop for Ws2812Esp32RmtDriver {
+    /// Uninstalls RMT driver
     fn drop(&mut self) {
         esp!(unsafe { rmt_driver_uninstall(self.channel) }).unwrap()
     }

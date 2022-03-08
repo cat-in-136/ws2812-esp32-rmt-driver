@@ -1,3 +1,5 @@
+//! embedded-graphics draw target API.
+
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use embedded_graphics_core::draw_target::DrawTarget;
@@ -6,15 +8,21 @@ use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
 use std::marker::PhantomData;
 
+/// LED pixel shape
 pub trait LedPixelShape {
+    /// Returns the number of pixels
     fn pixel_len() -> usize {
         let size = Self::size();
         (size.width * size.height) as usize
     }
+    /// Physical size of the LED pixel equipment.
     fn size() -> Size;
+    /// Convert from `point` to the index.
+    /// Returns `None` if it is out of the bounds.
     fn pixel_index(point: Point) -> Option<usize>;
 }
 
+/// LED pixel shape of `W`x`H` matrix
 pub struct LedPixelMatrix<const W: usize, const H: usize> {}
 
 impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
@@ -31,6 +39,13 @@ impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
     }
 }
 
+/// Target for embedded-graphics drawing operations of the LED pixels.
+///
+/// * `CDraw` - color type for embedded-graphics drawing operations
+/// * `CDev` - the LED pixel color type (device dependant). It shall be convertible from `CDraw`.
+/// * `S` - the LED pixel shape
+///
+/// `flush()` operation shall be required to write changes from a framebuffer to the display.
 pub struct LedPixelDrawTarget<CDraw, CDev, S>
 where
     CDraw: RgbColor,
@@ -50,6 +65,9 @@ where
     CDev: LedPixelColor + From<CDraw>,
     S: LedPixelShape,
 {
+    /// Create a new draw target.
+    ///
+    /// `channel_num` shall be different between different `gpio_num`.
     pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::new(channel_num, gpio_num)?;
         let data = std::iter::repeat(0)
@@ -64,23 +82,29 @@ where
         })
     }
 
+    /// Set maximum brightness.
+    /// Each channel values of the returned shall be scaled down to `(brightness + 1) / 256`.
     #[inline]
     pub fn set_brightness(&mut self, brightness: u8) {
         self.brightness = brightness;
         self.changed = true;
     }
 
+    /// Returns maximum brightness.
     #[inline]
     pub fn brightness(&self) -> u8 {
         self.brightness
     }
 
+    /// Clear with black.
+    /// Same operation as `clear(black_color)`.
     pub fn clear_with_black(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
         self.data.fill(0);
         self.changed = true;
         Ok(())
     }
 
+    /// Write changes from a framebuffer to the LED pixels
     pub fn flush(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
         if self.changed {
             self.driver.write(&self.data)?;
@@ -151,7 +175,9 @@ impl<
     }
 }
 
+/// LED pixel shape of `L`-led strip
 pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
+/// WS2812B LED draw target
 pub type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, LedPixelColorGrb24, S>;
 
 #[cfg(test)]
