@@ -6,12 +6,20 @@ use crate::driver::color::LedPixelColorGrb24;
 #[error("mock Ws2812Esp32RmtDriverError")]
 pub struct Ws2812Esp32RmtDriverError;
 
+/// Mock of Low-level WS2812 ESP32 RMT driver.
+///
+/// If the target vendor does not equals to "espressif", this mock is used instead of genuine
+/// Low-level WS2812 ESP32 RMT driver.
 pub struct Ws2812Esp32RmtDriver {
+    /// Pixel binary array to be written
     pub grb_pixels: Option<Vec<u8>>,
+    /// Whether wait for tx done (does not work on the mock!)
     pub wait_tx_done: bool,
 }
 
 impl Ws2812Esp32RmtDriver {
+    /// Creates a mock of `Ws2812Esp32RmtDriver`.
+    /// All arguments shall be ignored and always returns `Ok(_)`.
     pub fn new(_channel_num: u8, _gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
         Ok(Self {
             grb_pixels: None,
@@ -19,11 +27,13 @@ impl Ws2812Esp32RmtDriver {
         })
     }
 
+    /// Writes GRB pixel binary slice.
     pub fn write(&mut self, grb_pixels: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
         self.grb_pixels = Some(grb_pixels.to_vec());
         Ok(())
     }
 
+    /// Writes GRB pixel binary with converting into `LedPixelColorGrg24`.
     pub fn write_colors<I>(&mut self, iterator: I) -> Result<(), Ws2812Esp32RmtDriverError>
     where
         I: IntoIterator<Item = LedPixelColorGrb24>,
