@@ -19,7 +19,7 @@ The RMT (Remote Control) module is specific to ESP32. Hence, it can be used only
 
 ## Usage
 
-Install rust with Xtensa support. Refer [rpm-rs/rust-build](https://github.com/esp-rs/rust-build) for the setup
+Install rust with Xtensa support. Refer [esp-rs/rust-build](https://github.com/esp-rs/rust-build) for the setup
 instruction.
 
 Add following dependency to your `Cargo.toml`. Note that version is stripped in this example but it is recommended to
@@ -43,7 +43,7 @@ Make ensure `esp` toolchain is available and `xtensa-esp32-elf-clang` is in your
 
 ```console
 $ cargo build
-$ cargo espflush
+$ cargo espflash
 ```
 
 ## Features
