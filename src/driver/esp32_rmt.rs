@@ -9,7 +9,7 @@ const WS2812_TO0L_NS: u16 = 850;
 const WS2812_TO1H_NS: u16 = 800;
 const WS2812_TO1L_NS: u16 = 450;
 
-static WS2821_ITEM_ENCODER: OnceCell<Ws2812Esp32RmtItemEncoder> = OnceCell::new();
+static WS2812_ITEM_ENCODER: OnceCell<Ws2812Esp32RmtItemEncoder> = OnceCell::new();
 
 #[repr(C)]
 struct Ws2812Esp32RmtItemEncoder {
@@ -50,7 +50,7 @@ impl Ws2812Esp32RmtItemEncoder {
     }
 }
 
-unsafe extern "C" fn ws2821_rmt_adapter(
+unsafe extern "C" fn ws2812_rmt_adapter(
     src: *const c_void,
     dest: *mut rmt_item32_s,
     src_size: u32,
@@ -68,7 +68,7 @@ unsafe extern "C" fn ws2821_rmt_adapter(
     let src_slice = std::slice::from_raw_parts(src as *const u8, src_len);
     let dest_slice = std::slice::from_raw_parts_mut(dest, src_slice.len() * 8);
 
-    if let Some(encoder) = WS2821_ITEM_ENCODER.get() {
+    if let Some(encoder) = WS2812_ITEM_ENCODER.get() {
         encoder.encode(src_slice, dest_slice)
     }
 
@@ -123,10 +123,10 @@ impl Ws2812Esp32RmtDriver {
         };
         esp!(unsafe { rmt_config(&rmt_cfg) })?;
         esp!(unsafe { rmt_driver_install(channel, 0, 0) })?;
-        esp!(unsafe { rmt_translator_init(channel, Some(ws2821_rmt_adapter)) })?;
+        esp!(unsafe { rmt_translator_init(channel, Some(ws2812_rmt_adapter)) })?;
 
         let _encoder =
-            WS2821_ITEM_ENCODER.get_or_try_init(|| Ws2812Esp32RmtItemEncoder::new(channel))?;
+            WS2812_ITEM_ENCODER.get_or_try_init(|| Ws2812Esp32RmtItemEncoder::new(channel))?;
 
         Ok(Self {
             channel,
