@@ -31,7 +31,7 @@ impl Ws2812Esp32RmtItemEncoder {
         Ok(Self { bit0, bit1 })
     }
 
-    fn encode(&self, src_slice: &[u8], dest_slice: &mut [rmt_item32_s]) {
+    fn encode(&self, src_slice: &[u8], dest_slice: &mut [rmt_item32_t]) {
         src_slice
             .iter()
             .flat_map(|v| {
@@ -52,7 +52,7 @@ impl Ws2812Esp32RmtItemEncoder {
 
 unsafe extern "C" fn ws2812_rmt_adapter(
     src: *const c_void,
-    dest: *mut rmt_item32_s,
+    dest: *mut rmt_item32_t,
     src_size: u32,
     wanted_num: u32,
     translated_size: *mut u32,
