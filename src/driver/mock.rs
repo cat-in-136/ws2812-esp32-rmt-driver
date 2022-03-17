@@ -13,18 +13,13 @@ pub struct Ws2812Esp32RmtDriverError;
 pub struct Ws2812Esp32RmtDriver {
     /// Pixel binary array to be written
     pub grb_pixels: Option<Vec<u8>>,
-    /// Whether wait for tx done (does not work on the mock!)
-    pub wait_tx_done: bool,
 }
 
 impl Ws2812Esp32RmtDriver {
     /// Creates a mock of `Ws2812Esp32RmtDriver`.
     /// All arguments shall be ignored and always returns `Ok(_)`.
     pub fn new(_channel_num: u8, _gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
-        Ok(Self {
-            grb_pixels: None,
-            wait_tx_done: true,
-        })
+        Ok(Self { grb_pixels: None })
     }
 
     /// Writes GRB pixel binary slice.

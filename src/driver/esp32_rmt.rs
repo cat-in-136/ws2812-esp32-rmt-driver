@@ -85,8 +85,6 @@ pub struct Ws2812Esp32RmtDriverError(#[from] EspError);
 pub struct Ws2812Esp32RmtDriver {
     /// The RMT channel ID.
     channel: rmt_channel_t,
-    /// Whether wait for tx done
-    pub wait_tx_done: bool,
 }
 
 impl Ws2812Esp32RmtDriver {
@@ -128,10 +126,7 @@ impl Ws2812Esp32RmtDriver {
         let _encoder =
             WS2812_ITEM_ENCODER.get_or_try_init(|| Ws2812Esp32RmtItemEncoder::new(channel))?;
 
-        Ok(Self {
-            channel,
-            wait_tx_done: true,
-        })
+        Ok(Self { channel })
     }
 
     /// Writes pixel data from the slice to the IO pin.
@@ -149,7 +144,7 @@ impl Ws2812Esp32RmtDriver {
     pub fn write(&mut self, pixel_data: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
         let data_ptr = pixel_data.as_ptr();
         let data_len = u32::try_from(pixel_data.len()).expect("pixel_data.len() > u32::MAX");
-        esp!(unsafe { rmt_write_sample(self.channel, data_ptr, data_len, self.wait_tx_done,) })?;
+        esp!(unsafe { rmt_write_sample(self.channel, data_ptr, data_len, true) })?;
         Ok(())
     }
 }
