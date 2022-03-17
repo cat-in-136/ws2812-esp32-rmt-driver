@@ -1,7 +1,7 @@
-use crate::driver::color::LedPixelColorGrb24;
 use esp_idf_sys::*;
 use once_cell::sync::OnceCell;
 use std::cmp::min;
+use std::convert::TryFrom;
 use std::ffi::c_void;
 
 const WS2812_TO0H_NS: u16 = 400;
@@ -134,40 +134,23 @@ impl Ws2812Esp32RmtDriver {
         })
     }
 
-    /// Writes GRB pixel binary slice.
+    /// Writes pixel data from the slice to the IO pin.
+    ///
+    /// Byte count per LED pixel and channel order is not handled by this method.
+    /// The data has to be correctly laid out in the slice depending on the LED strip model.
     ///
     /// # Errors
     ///
     /// Returns an error if an RMT driver error occurred.
-    pub fn write(&mut self, grb_pixels: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
-        esp!(unsafe {
-            let grb_ptr = grb_pixels.as_ptr();
-            rmt_write_sample(
-                self.channel,
-                grb_ptr,
-                grb_pixels.len() as u32,
-                self.wait_tx_done,
-            )
-        })?;
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given slice is longer than `u32::MAX`.
+    pub fn write(&mut self, pixel_data: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
+        let data_ptr = pixel_data.as_ptr();
+        let data_len = u32::try_from(pixel_data.len()).expect("pixel_data.len() > u32::MAX");
+        esp!(unsafe { rmt_write_sample(self.channel, data_ptr, data_len, self.wait_tx_done,) })?;
         Ok(())
-    }
-
-    /// Writes GRB pixel binary with converting into `LedPixelColorGrg24`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if an RMT driver error occurred.
-    pub fn write_colors<I>(&mut self, iterator: I) -> Result<(), Ws2812Esp32RmtDriverError>
-    where
-        I: IntoIterator<Item = LedPixelColorGrb24>,
-    {
-        let mut vec = Vec::new();
-        for color in iterator {
-            for v in color.as_ref() {
-                vec.push(*v);
-            }
-        }
-        self.write(&vec)
     }
 }
 

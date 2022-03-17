@@ -41,8 +41,10 @@ impl SmartLedsWrite for Ws2812Esp32Rmt {
         T: Iterator<Item = I>,
         I: Into<Self::Color>,
     {
-        let iter = iterator.map(|v| LedPixelColorGrb24::from(v.into()));
-        self.driver.write_colors(iter)
+        let pixel_data: Vec<u8> = iterator
+            .flat_map(|color| LedPixelColorGrb24::from(color.into()).0)
+            .collect();
+        self.driver.write(&pixel_data)
     }
 }
 
