@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install Rust for Xtensa
+      uses: esp-rs/xtensa-toolchain@v1
+      with:
+        default: false
+        version: "1.57.0.2"
+        ldproxy: true
     - uses: actions/checkout@v2
     - uses: actions/cache@v2
       with:
@@ -19,13 +25,6 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - name: Install Rust for Xtensa
-      uses: esp-rs/xtensa-toolchain@v1
-      with:
-        default: false
-        version: "1.57.0.2"
-        ldproxy: true
-      working-directory: /tmp
     - name: Build
       run: cargo build --verbose
     - name: Build example m5atom
