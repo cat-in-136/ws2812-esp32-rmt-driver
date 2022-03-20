@@ -8,8 +8,7 @@ description = "WS2812 driver using ESP32 RMT"
 homepage = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
 readme = "README.md"
 repository = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
-edition = "2018"
-resolver = "2"
+edition = "2021"
 
 [features]
 default = ["smart-leds-trait", "embedded-graphics-core"]
