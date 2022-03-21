@@ -11,26 +11,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - run: mv rust-toolchain.toml rust-toolchain.toml.bak
     - name: Install Rust for Xtensa
       uses: esp-rs/xtensa-toolchain@v1
       with:
         default: false
         version: "1.57.0.2"
         ldproxy: true
-    - run: mv rust-toolchain.toml.bak rust-toolchain.toml
+    - uses: actions/checkout@v3
+      with:
+        path: ws2812-esp32-rmt-driver
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ws2812-esp32-rmt-driver/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
       run: cargo build --verbose
+      working-directory: ./ws2812-esp32-rmt-driver
     - name: Build example m5atom
       run: cargo build --examples --all-features
+      working-directory: ./ws2812-esp32-rmt-driver
     - name: Test
       run: |
         cargo +stable test --target x86_64-unknown-linux-gnu --lib
@@ -38,7 +40,7 @@ jobs:
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features smart-leds-trait
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features embedded-graphics-core
+      working-directory: ./ws2812-esp32-rmt-driver
     - name: Publish (Dry run)
-      run: |
-        rm -rf install-rust-toolchain.sh rust-* xtensa-esp32-elf-llvm*
-        cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
+      run: cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
+      working-directory: ./ws2812-esp32-rmt-driver
