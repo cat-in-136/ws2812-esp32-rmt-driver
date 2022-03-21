@@ -17,8 +17,9 @@ jobs:
         default: false
         version: "1.57.0.2"
         ldproxy: true
-    - uses: actions/checkout@v2
-      path: ws2812-esp32-rmt-driver
+    - uses: actions/checkout@v3
+      with:
+        path: ws2812-esp32-rmt-driver
     - uses: actions/cache@v2
       with:
         path: |
