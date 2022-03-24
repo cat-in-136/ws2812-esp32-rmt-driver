@@ -276,14 +276,14 @@ mod test {
 
         draw.changed = true;
         draw.data.fill(0x01);
-        draw.driver.grb_pixels = None;
+        draw.driver.pixel_data = None;
         draw.flush().unwrap();
-        assert_eq!(draw.driver.grb_pixels.unwrap(), draw.data);
+        assert_eq!(draw.driver.pixel_data.unwrap(), draw.data);
         assert_eq!(draw.changed, false);
 
-        draw.driver.grb_pixels = None;
+        draw.driver.pixel_data = None;
         draw.flush().unwrap();
-        assert_eq!(draw.driver.grb_pixels, None);
+        assert_eq!(draw.driver.pixel_data, None);
         assert_eq!(draw.changed, false);
     }
 }

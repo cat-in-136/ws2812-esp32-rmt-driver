@@ -6,6 +6,8 @@ pub mod driver;
 #[cfg(not(feature = "unstable"))]
 mod driver;
 
+pub use driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
+
 #[cfg(all(feature = "embedded-graphics-core", feature = "unstable"))]
 pub mod lib_embedded_graphics;
 

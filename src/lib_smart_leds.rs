@@ -41,8 +41,10 @@ impl SmartLedsWrite for Ws2812Esp32Rmt {
         T: Iterator<Item = I>,
         I: Into<Self::Color>,
     {
-        let iter = iterator.map(|v| LedPixelColorGrb24::from(v.into()));
-        self.driver.write_colors(iter)
+        let pixel_data: Vec<u8> = iterator
+            .flat_map(|color| LedPixelColorGrb24::from(color.into()).0)
+            .collect();
+        self.driver.write(&pixel_data)
     }
 }
 
@@ -53,5 +55,5 @@ fn test_ws2812_esp32_rmt_smart_leds() {
     let expected_values: [u8; 6] = [0x01, 0x00, 0x02, 0x04, 0x03, 0x05];
     let mut ws2812 = Ws2812Esp32Rmt::new(0, 27).unwrap();
     ws2812.write(sample_data.iter().cloned()).unwrap();
-    assert_eq!(ws2812.driver.grb_pixels.unwrap(), &expected_values);
+    assert_eq!(ws2812.driver.pixel_data.unwrap(), &expected_values);
 }
