@@ -31,6 +31,13 @@ embedded-graphics = "0.7"
 embuild = "0.28"
 anyhow = "1"
 
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
