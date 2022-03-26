@@ -32,21 +32,16 @@ impl Ws2812Esp32RmtItemEncoder {
     }
 
     fn encode(&self, src_slice: &[u8], dest_slice: &mut [rmt_item32_t]) {
-        src_slice
-            .iter()
-            .flat_map(|v| {
-                (0..8).map(move |i| {
+        for (k, &v) in src_slice.iter().enumerate() {
+            for i in 0..(u8::BITS as usize) {
+                dest_slice[k * (u8::BITS as usize) + i].__bindgen_anon_1.val =
                     if v & (1 << (7 - i)) != 0 {
                         self.bit1
                     } else {
                         self.bit0
-                    }
-                })
-            })
-            .enumerate()
-            .for_each(|(i, v)| {
-                dest_slice[i].__bindgen_anon_1.val = v;
-            });
+                    };
+            }
+        }
     }
 }
 
