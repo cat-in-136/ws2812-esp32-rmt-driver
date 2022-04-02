@@ -1,9 +1,10 @@
 [package]
 name = "ws2812-esp32-rmt-driver"
-version = "0.2.2"
+version = "0.3.0"
 license = "MIT"
 authors = ["@cat_in_136"]
-categories = ["embedded"]
+categories = ["embedded", "hardware-support"]
+keywords = ["embedded-graphics", "esp32", "neopixel", "smart-leds", "ws2812"]
 description = "WS2812 driver using ESP32 RMT"
 homepage = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
 readme = "README.md"
