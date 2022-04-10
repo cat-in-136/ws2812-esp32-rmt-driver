@@ -1,6 +1,6 @@
 [package]
 name = "ws2812-esp32-rmt-driver"
-version = "0.3.0"
+version = "0.3.1"
 license = "MIT"
 authors = ["@cat_in_136"]
 categories = ["embedded", "hardware-support"]
