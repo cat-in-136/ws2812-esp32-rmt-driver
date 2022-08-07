@@ -29,7 +29,7 @@ smart-leds = "0.3"
 embedded-graphics = "0.7"
 
 [build-dependencies]
-embuild = "0.28"
+embuild = "0.30"
 anyhow = "1"
 
 [profile.release]
