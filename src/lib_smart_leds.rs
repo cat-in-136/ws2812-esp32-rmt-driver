@@ -34,16 +34,16 @@ impl<
     }
 }
 
-/// ws2812 driver wrapper providing smart-leds API
-pub struct Ws2812Esp32Rmt<CSmart = RGB8, CDev = LedPixelColorGrb24>
+/// ws2812-like smart led driver wrapper providing smart-leds API
+pub struct LedPixelEsp32Rmt<CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
 {
     driver: Ws2812Esp32RmtDriver,
-    phantom: PhantomData<(CDev, CSmart)>,
+    phantom: PhantomData<(CSmart, CDev)>,
 }
 
-impl<CSmart, CDev> Ws2812Esp32Rmt<CSmart, CDev>
+impl<CSmart, CDev> LedPixelEsp32Rmt<CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
 {
@@ -59,7 +59,7 @@ where
     }
 }
 
-impl<CSmart, CDev> SmartLedsWrite for Ws2812Esp32Rmt<CSmart, CDev>
+impl<CSmart, CDev> SmartLedsWrite for LedPixelEsp32Rmt<CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
 {
@@ -80,6 +80,9 @@ where
         self.driver.write(pixel_data.as_slice())
     }
 }
+
+/// ws2812 driver wrapper providing smart-leds API
+pub type Ws2812Esp32Rmt = LedPixelEsp32Rmt<RGB8, LedPixelColorGrb24>;
 
 #[test]
 #[cfg(not(target_vendor = "espressif"))]

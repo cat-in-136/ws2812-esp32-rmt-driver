@@ -14,6 +14,6 @@ pub mod lib_smart_leds;
 mod lib_smart_leds;
 
 #[cfg(feature = "smart-leds-trait")]
-pub use lib_smart_leds::{Ws2812Esp32Rmt, RGBW8};
+pub use lib_smart_leds::{LedPixelEsp32Rmt, Ws2812Esp32Rmt, RGBW8};
 #[cfg(feature = "smart-leds-trait")]
 pub use smart_leds_trait::RGB8;
