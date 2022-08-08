@@ -12,10 +12,10 @@ jobs:
 
     steps:
     - name: Install Rust for Xtensa
-      uses: esp-rs/xtensa-toolchain@v1
+      uses: esp-rs/xtensa-toolchain@v1.2
       with:
-        default: false
-        version: "1.57.0.2"
+        default: true
+        version: "1.60.0"
         ldproxy: true
     - uses: actions/checkout@v3
       with:
