@@ -1,6 +1,8 @@
 //! embedded-graphics draw target API.
 
-use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
+use crate::driver::color::{
+    LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl, LedPixelColorRgbw32,
+};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
@@ -177,7 +179,7 @@ impl<
 
 /// LED pixel shape of `L`-led strip
 pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
-/// WS2812B LED draw target
+/// 24bit GRB LED (Typical RGB LED (WS2812BsSK6812)) draw target
 pub type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, LedPixelColorGrb24, S>;
 
 #[cfg(test)]
