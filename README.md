@@ -13,6 +13,8 @@ same as major Arduino/C++ library such as [FastLED](https://github.com/FastLED/F
 
 The RMT (Remote Control) module is specific to ESP32. Hence, it can be used only for ESP32 SoC.
 
+This library also support SK6812-RGBW 4-color LED pixels/strips (smart-leds API only).
+
 [rmt]: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/rmt.html
 
 [ws2812b-datasheet]: https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf
@@ -48,7 +50,6 @@ $ cargo espflash
 
 ## Features
 
-* `features = ["unstable"]` to enable low-level driver API `ws2812_esp32_rmt_driver::driver`
 * `features = ["embedded-graphics-core", "unstable"]` to enable embedded-graphics
   API `ws2812_esp32_rmt_driver::lib_embedded_graphics`.
 * `features = ["smart-leds"]` or default to enable minimum smart-leds API.
