@@ -33,10 +33,12 @@ embuild = "0.30"
 anyhow = "1"
 
 [profile.release]
+strip = true
 opt-level = "s"
 
 [profile.dev]
 debug = true # Symbols are nice and they don't increase the size on Flash
+strip = true
 opt-level = "z"
 
 [package.metadata.docs.rs]
