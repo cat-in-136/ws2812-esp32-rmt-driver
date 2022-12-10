@@ -22,7 +22,7 @@ once_cell = "1"
 thiserror = "1"
 
 [target.'cfg(target_vendor = "espressif")'.dependencies]
-esp-idf-sys = { version = ">=0.30", features = ["binstart"] }
+esp-idf-sys = { version = ">=0.32", features = ["binstart"] }
 
 [dev-dependencies]
 smart-leds = "0.3"

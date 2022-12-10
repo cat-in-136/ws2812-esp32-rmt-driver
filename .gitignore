@@ -1,5 +1,6 @@
 .idea
 .embuild
+.vscode
 
 # Created by https://www.gitignore.io/api/vim,emacs,intellij,visualstudiocode,rust
 # Edit at https://www.gitignore.io/?templates=vim,emacs,intellij,visualstudiocode,rust

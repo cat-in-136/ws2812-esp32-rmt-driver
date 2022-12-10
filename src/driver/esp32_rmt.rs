@@ -1,7 +1,6 @@
 use esp_idf_sys::*;
 use once_cell::sync::OnceCell;
 use std::cmp::min;
-use std::convert::TryFrom;
 use std::ffi::c_void;
 
 const WS2812_TO0H_NS: u16 = 400;
@@ -48,10 +47,10 @@ impl Ws2812Esp32RmtItemEncoder {
 unsafe extern "C" fn ws2812_rmt_adapter(
     src: *const c_void,
     dest: *mut rmt_item32_t,
-    src_size: u32,
-    wanted_num: u32,
-    translated_size: *mut u32,
-    item_num: *mut u32,
+    src_size: usize,
+    wanted_num: usize,
+    translated_size: *mut usize,
+    item_num: *mut usize,
 ) {
     if src.is_null() || dest.is_null() {
         *translated_size = 0;
@@ -138,8 +137,7 @@ impl Ws2812Esp32RmtDriver {
     /// Panics if the given slice is longer than `u32::MAX`.
     pub fn write(&mut self, pixel_data: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
         let data_ptr = pixel_data.as_ptr();
-        let data_len = u32::try_from(pixel_data.len()).expect("pixel_data.len() > u32::MAX");
-        esp!(unsafe { rmt_write_sample(self.channel, data_ptr, data_len, true) })?;
+        esp!(unsafe { rmt_write_sample(self.channel, data_ptr, pixel_data.len(), true) })?;
         Ok(())
     }
 }
