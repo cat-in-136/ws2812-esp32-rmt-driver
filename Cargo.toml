@@ -22,14 +22,14 @@ once_cell = "1"
 thiserror = "1"
 
 [target.'cfg(target_vendor = "espressif")'.dependencies]
-esp-idf-sys = { version = ">=0.30", features = ["binstart"] }
+esp-idf-sys = { version = "0.32", features = ["binstart"] }
 
 [dev-dependencies]
 smart-leds = "0.3"
 embedded-graphics = "0.7"
 
 [build-dependencies]
-embuild = "0.30"
+embuild = "0.31.0"
 anyhow = "1"
 
 [profile.release]
@@ -44,3 +44,4 @@ opt-level = "z"
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
