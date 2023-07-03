@@ -75,10 +75,18 @@ impl<
     #[inline]
     fn new_with_rgbw(r: u8, g: u8, b: u8, w: u8) -> Self {
         let mut array = [0; N];
-        array.get_mut(R_ORDER).and_then(|v| Some(*v = r));
-        array.get_mut(G_ORDER).and_then(|v| Some(*v = g));
-        array.get_mut(B_ORDER).and_then(|v| Some(*v = b));
-        array.get_mut(W_ORDER).and_then(|v| Some(*v = w));
+        if let Some(v) = array.get_mut(R_ORDER) {
+            *v = r;
+        }
+        if let Some(v) = array.get_mut(G_ORDER) {
+            *v = g;
+        }
+        if let Some(v) = array.get_mut(B_ORDER) {
+            *v = b;
+        }
+        if let Some(v) = array.get_mut(W_ORDER) {
+            *v = w;
+        }
         Self(array)
     }
 

@@ -21,12 +21,12 @@ impl Ws2812Esp32RmtItemEncoder {
         let mut clock_hz = 0u32;
         esp!(unsafe { rmt_get_counter_clock(channel, &mut clock_hz as *mut u32) })?;
         let clock_hz = clock_hz as u64;
-        let to0h_clk = ((WS2812_TO0H_NS as u64) * clock_hz.clone() / 1000_000_000) as u32;
-        let to0l_clk = ((WS2812_TO0L_NS as u64) * clock_hz.clone() / 1000_000_000) as u32;
-        let to1h_clk = ((WS2812_TO1H_NS as u64) * clock_hz.clone() / 1000_000_000) as u32;
-        let to1l_clk = ((WS2812_TO1L_NS as u64) * clock_hz.clone() / 1000_000_000) as u32;
-        let bit0 = to0h_clk | (1 << 15) | (to0l_clk << 16) | (0 << 31);
-        let bit1 = to1h_clk | (1 << 15) | (to1l_clk << 16) | (0 << 31);
+        let to0h_clk = ((WS2812_TO0H_NS as u64) * clock_hz / 1_000_000_000) as u32;
+        let to0l_clk = ((WS2812_TO0L_NS as u64) * clock_hz / 1_000_000_000) as u32;
+        let to1h_clk = ((WS2812_TO1H_NS as u64) * clock_hz / 1_000_000_000) as u32;
+        let to1l_clk = ((WS2812_TO1L_NS as u64) * clock_hz / 1_000_000_000) as u32;
+        let bit0 = to0h_clk | (1 << 15) | (to0l_clk << 16);
+        let bit1 = to1h_clk | (1 << 15) | (to1l_clk << 16);
         Ok(Self { bit0, bit1 })
     }
 
@@ -58,7 +58,7 @@ unsafe extern "C" fn ws2812_rmt_adapter(
         return;
     }
 
-    let src_len = min(src_size, wanted_num / 8) as usize;
+    let src_len = min(src_size, wanted_num / 8);
     let src_slice = std::slice::from_raw_parts(src as *const u8, src_len);
     let dest_slice = std::slice::from_raw_parts_mut(dest, src_slice.len() * 8);
 
