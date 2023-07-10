@@ -17,7 +17,7 @@ unstable = []
 
 [dependencies]
 smart-leds-trait = { version = "0.2", optional = true }
-embedded-graphics-core = { version = "0.3", optional = true }
+embedded-graphics-core = { version = "0.4", optional = true }
 once_cell = "1"
 thiserror = "1"
 
@@ -26,10 +26,10 @@ esp-idf-sys = { version = ">=0.32", features = ["binstart"] }
 
 [dev-dependencies]
 smart-leds = "0.3"
-embedded-graphics = "0.7"
+embedded-graphics = "0.8"
 
 [build-dependencies]
-embuild = "0.30"
+embuild = "0.31"
 anyhow = "1"
 
 [profile.release]
