@@ -1,13 +1,11 @@
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripheral::Peripheral;
 use esp_idf_hal::rmt::config::TransmitConfig;
-use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, TxRmtDriver, VariableLengthSignal};
+use esp_idf_hal::rmt::{FixedLengthSignal, PinState, Pulse, RmtChannel, Signal, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
-use esp_idf_sys::EspError;
-use once_cell::sync::OnceCell;
+use esp_idf_sys::{rmt_item32_t, EspError};
 use std::time::Duration;
 
-static WS2812_ITEM_ENCODER: OnceCell<Ws2812Esp32RmtItemEncoder> = OnceCell::new();
 const WS2812_TO0H_NS: Duration = Duration::from_nanos(400);
 const WS2812_TO0L_NS: Duration = Duration::from_nanos(850);
 const WS2812_TO1H_NS: Duration = Duration::from_nanos(800);
@@ -15,8 +13,8 @@ const WS2812_TO1L_NS: Duration = Duration::from_nanos(450);
 
 #[repr(C)]
 struct Ws2812Esp32RmtItemEncoder {
-    bit0: (Pulse, Pulse),
-    bit1: (Pulse, Pulse),
+    bit0: rmt_item32_t,
+    bit1: rmt_item32_t,
 }
 
 impl Ws2812Esp32RmtItemEncoder {
@@ -27,30 +25,36 @@ impl Ws2812Esp32RmtItemEncoder {
             Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_TO1H_NS)?,
             Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_TO1L_NS)?,
         );
-        Ok(Self {
-            bit0: (t0h, t0l),
-            bit1: (t1h, t1l),
-        })
+
+        let (bit0, bit1) = {
+            let mut bit0_sig = FixedLengthSignal::<1>::new();
+            let mut bit1_sig = FixedLengthSignal::<1>::new();
+            bit0_sig.set(0, &(t0h, t0l))?;
+            bit1_sig.set(0, &(t1h, t1l))?;
+
+            (bit0_sig.as_slice()[0], bit1_sig.as_slice()[0])
+        };
+
+        Ok(Self { bit0, bit1 })
     }
 
-    fn encode_variable<T>(&self, src: T) -> Result<VariableLengthSignal, EspError>
+    fn encode_iter_blocking<'a, 'b, T>(
+        &'a self,
+        src: T,
+    ) -> impl Iterator<Item = rmt_item32_t> + Send + 'a
     where
-        T: Iterator<Item = u8>,
+        'b: 'a,
+        T: Iterator<Item = u8> + Send + 'b,
     {
-        let mut s = VariableLengthSignal::new();
-
-        for v in src {
-            for i in 0..(u8::BITS as usize) {
-                let bit_sig = if v & (1 << (7 - i)) != 0 {
+        src.flat_map(move |v| {
+            (0..(u8::BITS as usize)).map(move |i| {
+                if v & (1 << (7 - i)) != 0 {
                     self.bit1
                 } else {
                     self.bit0
-                };
-                s.push([bit_sig.0, bit_sig.1].iter())?;
-            }
-        }
-
-        Ok(s)
+                }
+            })
+        })
     }
 }
 
@@ -63,6 +67,8 @@ pub struct Ws2812Esp32RmtDriverError(#[from] EspError);
 pub struct Ws2812Esp32RmtDriver<'d> {
     /// TxRMT driver.
     tx: TxRmtDriver<'d>,
+    /// `u8`-to-`rmt_item32_t` Encoder
+    encoder: Ws2812Esp32RmtItemEncoder,
 }
 
 impl<'d> Ws2812Esp32RmtDriver<'d> {
@@ -81,12 +87,10 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         let config = TransmitConfig::new().clock_divider(1);
         let tx = TxRmtDriver::new(channel, pin, &config)?;
 
-        let _encoder = WS2812_ITEM_ENCODER.get_or_try_init(|| {
-            let clock_hz = tx.counter_clock()?;
-            Ws2812Esp32RmtItemEncoder::new(clock_hz)
-        })?;
+        let clock_hz = tx.counter_clock()?;
+        let encoder = Ws2812Esp32RmtItemEncoder::new(clock_hz)?;
 
-        Ok(Self { tx })
+        Ok(Self { tx, encoder })
     }
 
     /// Writes pixel data from the slice to the IO pin.
@@ -98,10 +102,9 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     ///
     /// Returns an error if an RMT driver error occurred.
     pub fn write(&mut self, pixel_data: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
-        if let Some(encoder) = WS2812_ITEM_ENCODER.get() {
-            let signal = encoder.encode_variable(pixel_data.iter().cloned())?;
-            self.tx.start_blocking(&signal)?;
-        }
-        Ok(())
+        let signal = self
+            .encoder
+            .encode_iter_blocking(pixel_data.iter().cloned());
+        Ok(self.tx.start_iter_blocking(signal)?)
     }
 }
