@@ -2,11 +2,11 @@
 
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
-use esp_idf_hal::gpio::OutputPin;
-use esp_idf_hal::peripheral::Peripheral;
-use esp_idf_hal::rmt::RmtChannel;
 use smart_leds_trait::{SmartLedsWrite, RGB8, RGBW};
 use std::marker::PhantomData;
+
+#[cfg(target_vendor = "espressif")]
+use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};
 
 /// 8-bit RGBW (RGB + white)
 pub type RGBW8 = RGBW<u8, u8>;
@@ -53,11 +53,22 @@ where
     /// Create a new driver wrapper.
     ///
     /// `channel` shall be different between different `pin`.
+    #[cfg(target_vendor = "espressif")]
     pub fn new<C: RmtChannel>(
         channel: impl Peripheral<P = C> + 'd,
         pin: impl Peripheral<P = impl OutputPin> + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
+        Ok(Self {
+            driver,
+            phantom: Default::default(),
+        })
+    }
+
+    /// Create a new driver wrapper with dummy driver.
+    #[cfg(not(target_vendor = "espressif"))]
+    pub fn new() -> Result<Self, Ws2812Esp32RmtDriverError> {
+        let driver = Ws2812Esp32RmtDriver::<'d>::new()?;
         Ok(Self {
             driver,
             phantom: Default::default(),
@@ -95,7 +106,7 @@ pub type Ws2812Esp32Rmt<'d> = LedPixelEsp32Rmt<'d, RGB8, LedPixelColorGrb24>;
 fn test_ws2812_esp32_rmt_smart_leds() {
     let sample_data = [RGB8::new(0x00, 0x01, 0x02), RGB8::new(0x03, 0x04, 0x05)];
     let expected_values: [u8; 6] = [0x01, 0x00, 0x02, 0x04, 0x03, 0x05];
-    let mut ws2812 = Ws2812Esp32Rmt::new(0, 27).unwrap();
+    let mut ws2812 = Ws2812Esp32Rmt::new().unwrap();
     ws2812.write(sample_data.iter().cloned()).unwrap();
     assert_eq!(ws2812.driver.pixel_data.unwrap(), &expected_values);
 }
