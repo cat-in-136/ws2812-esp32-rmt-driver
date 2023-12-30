@@ -2,6 +2,9 @@
 
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
+use esp_idf_hal::gpio::OutputPin;
+use esp_idf_hal::peripheral::Peripheral;
+use esp_idf_hal::rmt::RmtChannel;
 use smart_leds_trait::{SmartLedsWrite, RGB8, RGBW};
 use std::marker::PhantomData;
 
@@ -35,23 +38,26 @@ impl<
 }
 
 /// ws2812-like smart led driver wrapper providing smart-leds API
-pub struct LedPixelEsp32Rmt<CSmart, CDev>
+pub struct LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
 {
-    driver: Ws2812Esp32RmtDriver,
+    driver: Ws2812Esp32RmtDriver<'d>,
     phantom: PhantomData<(CSmart, CDev)>,
 }
 
-impl<CSmart, CDev> LedPixelEsp32Rmt<CSmart, CDev>
+impl<'d, CSmart, CDev> LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
 {
     /// Create a new driver wrapper.
     ///
-    /// `channel_num` shall be different between different `gpio_num`.
-    pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
-        let driver = Ws2812Esp32RmtDriver::new(channel_num, gpio_num)?;
+    /// `channel` shall be different between different `pin`.
+    pub fn new<C: RmtChannel>(
+        channel: impl Peripheral<P = C> + 'd,
+        pin: impl Peripheral<P = impl OutputPin> + 'd,
+    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
         Ok(Self {
             driver,
             phantom: Default::default(),
@@ -59,7 +65,7 @@ where
     }
 }
 
-impl<CSmart, CDev> SmartLedsWrite for LedPixelEsp32Rmt<CSmart, CDev>
+impl<'d, CSmart, CDev> SmartLedsWrite for LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
 {
@@ -82,7 +88,7 @@ where
 }
 
 /// ws2812 driver wrapper providing smart-leds API
-pub type Ws2812Esp32Rmt = LedPixelEsp32Rmt<RGB8, LedPixelColorGrb24>;
+pub type Ws2812Esp32Rmt<'d> = LedPixelEsp32Rmt<'d, RGB8, LedPixelColorGrb24>;
 
 #[test]
 #[cfg(not(target_vendor = "espressif"))]

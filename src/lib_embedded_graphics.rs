@@ -1,13 +1,14 @@
 //! embedded-graphics draw target API.
 
-use crate::driver::color::{
-    LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl, LedPixelColorRgbw32,
-};
+use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
 use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
+use esp_idf_hal::gpio::OutputPin;
+use esp_idf_hal::peripheral::Peripheral;
+use esp_idf_hal::rmt::RmtChannel;
 use std::marker::PhantomData;
 
 /// LED pixel shape
@@ -48,20 +49,20 @@ impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
 /// * `S` - the LED pixel shape
 ///
 /// `flush()` operation shall be required to write changes from a framebuffer to the display.
-pub struct LedPixelDrawTarget<CDraw, CDev, S>
+pub struct LedPixelDrawTarget<'d, CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
     S: LedPixelShape,
 {
-    driver: Ws2812Esp32RmtDriver,
+    driver: Ws2812Esp32RmtDriver<'d>,
     data: Vec<u8>,
     brightness: u8,
     changed: bool,
     _phantom: PhantomData<(CDraw, CDev, S)>,
 }
 
-impl<CDraw, CDev, S> LedPixelDrawTarget<CDraw, CDev, S>
+impl<'d, CDraw, CDev, S> LedPixelDrawTarget<'d, CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
@@ -69,9 +70,12 @@ where
 {
     /// Create a new draw target.
     ///
-    /// `channel_num` shall be different between different `gpio_num`.
-    pub fn new(channel_num: u8, gpio_num: u32) -> Result<Self, Ws2812Esp32RmtDriverError> {
-        let driver = Ws2812Esp32RmtDriver::new(channel_num, gpio_num)?;
+    /// `channel` shall be different between different `pin`.
+    pub fn new<C: RmtChannel>(
+        channel: impl Peripheral<P = C> + 'd,
+        pin: impl Peripheral<P = impl OutputPin> + 'd,
+    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
         let data = std::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)
             .collect::<Vec<_>>();
@@ -116,7 +120,7 @@ where
     }
 }
 
-impl<CDraw, CDev, S> OriginDimensions for LedPixelDrawTarget<CDraw, CDev, S>
+impl<'d, CDraw, CDev, S> OriginDimensions for LedPixelDrawTarget<'d, CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
@@ -128,7 +132,7 @@ where
     }
 }
 
-impl<CDraw, CDev, S> DrawTarget for LedPixelDrawTarget<CDraw, CDev, S>
+impl<'d, CDraw, CDev, S> DrawTarget for LedPixelDrawTarget<'d, CDraw, CDev, S>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
@@ -180,7 +184,7 @@ impl<
 /// LED pixel shape of `L`-led strip
 pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
 /// 24bit GRB LED (Typical RGB LED (WS2812BsSK6812)) draw target
-pub type Ws2812DrawTarget<S> = LedPixelDrawTarget<Rgb888, LedPixelColorGrb24, S>;
+pub type Ws2812DrawTarget<'d, S> = LedPixelDrawTarget<'d, Rgb888, LedPixelColorGrb24, S>;
 
 #[cfg(test)]
 mod test {

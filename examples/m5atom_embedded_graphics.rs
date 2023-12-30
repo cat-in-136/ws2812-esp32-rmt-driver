@@ -2,6 +2,7 @@
 use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle, Triangle};
+use esp_idf_hal::peripherals::Peripherals;
 use std::thread::sleep;
 use std::time::Duration;
 use ws2812_esp32_rmt_driver::lib_embedded_graphics::{LedPixelMatrix, Ws2812DrawTarget};
@@ -11,7 +12,11 @@ fn main() -> ! {
     // or else some patches to the runtime implemented by esp-idf-sys might not link properly.
     esp_idf_sys::link_patches();
 
-    let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(0, 27).unwrap();
+    let peripherals = Peripherals::take().unwrap();
+    let led_pin = peripherals.pins.gpio27;
+    let channel = peripherals.rmt.channel0;
+
+    let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(channel, led_pin).unwrap();
     draw.set_brightness(40);
 
     println!("Start Ws2812DrawTarget!");
