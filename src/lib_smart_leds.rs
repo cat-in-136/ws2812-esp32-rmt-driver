@@ -88,13 +88,12 @@ where
         T: Iterator<Item = I>,
         I: Into<Self::Color>,
     {
-        let mut pixel_data = Vec::new();
-        for color in iterator {
-            for v in CDev::from(color.into()).as_ref() {
-                pixel_data.push(*v)
-            }
-        }
-        self.driver.write(pixel_data.as_slice())
+        let pixel_data = iterator.fold(Vec::new(), |mut vec, color| {
+            vec.extend_from_slice(CDev::from(color.into()).as_ref());
+            vec
+        });
+        self.driver.write_iter_blocking(pixel_data.iter())?;
+        Ok(())
     }
 }
 

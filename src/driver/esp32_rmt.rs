@@ -118,18 +118,24 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         Ok(Self { tx, encoder })
     }
 
-    /// Writes pixel data from the slice to the IO pin.
+    /// Writes pixel data from a pixel-byte sequence to the IO pin.
     ///
     /// Byte count per LED pixel and channel order is not handled by this method.
-    /// The data has to be correctly laid out in the slice depending on the LED strip model.
+    /// The pixel data sequence has to be correctly laid out depending on the LED strip model.
     ///
     /// # Errors
     ///
     /// Returns an error if an RMT driver error occurred.
-    pub fn write(&mut self, pixel_data: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
-        let signal = self
-            .encoder
-            .encode_iter_blocking(pixel_data.iter().cloned());
-        Ok(self.tx.start_iter_blocking(signal)?)
+    pub fn write_iter_blocking<'a, 'b, T>(
+        &'a mut self,
+        pixel_sequence: T,
+    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        'b: 'a,
+        T: Iterator<Item = &'b u8> + Send + 'b,
+    {
+        let signal = self.encoder.encode_iter_blocking(pixel_sequence.cloned());
+        self.tx.start_iter_blocking(signal)?;
+        Ok(())
     }
 }

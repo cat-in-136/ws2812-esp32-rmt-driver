@@ -26,9 +26,16 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         })
     }
 
-    /// Writes GRB pixel binary slice.
-    pub fn write(&mut self, pixel_data: &[u8]) -> Result<(), Ws2812Esp32RmtDriverError> {
-        self.pixel_data = Some(pixel_data.to_vec());
+    /// Writes GRB pixel binary iterator.
+    pub fn write_iter_blocking<'a, 'b, T>(
+        &'a mut self,
+        pixel_sequence: T,
+    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        'b: 'a,
+        T: Iterator<Item = &'b u8> + Send + 'b,
+    {
+        self.pixel_data = Some(pixel_sequence.cloned().collect());
         Ok(())
     }
 }
@@ -39,6 +46,6 @@ fn test_ws2812_esp32_rmt_driver_mock() {
 
     let mut driver = Ws2812Esp32RmtDriver::new().unwrap();
     assert_eq!(driver.pixel_data, None);
-    driver.write(&sample_data).unwrap();
+    driver.write_iter_blocking(sample_data.iter()).unwrap();
     assert_eq!(driver.pixel_data.unwrap(), &sample_data);
 }
