@@ -28,18 +28,12 @@ jobs:
           ws2812-esp32-rmt-driver/target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
-      env:
-        RUSTFLAGS: "${{ '--cfg espidf_time64' }}"
       run: cargo build --verbose
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Build example m5atom
-      env:
-        RUSTFLAGS: "${{ '--cfg espidf_time64' }}"
       run: cargo build --examples --all-features
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Test
-      env:
-        RUSTFLAGS: "${{ '--cfg espidf_time64' }}"
       run: |
         cargo +stable test --target x86_64-unknown-linux-gnu --lib
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --all-features
@@ -48,7 +42,5 @@ jobs:
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features embedded-graphics-core
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Publish (Dry run)
-      env:
-        RUSTFLAGS: "${{ '--cfg espidf_time64' }}"
       run: cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
       working-directory: ./ws2812-esp32-rmt-driver
