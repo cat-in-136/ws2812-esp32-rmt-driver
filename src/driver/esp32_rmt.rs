@@ -6,24 +6,40 @@ use esp_idf_hal::units::Hertz;
 use esp_idf_sys::{rmt_item32_t, EspError};
 use std::time::Duration;
 
-const WS2812_TO0H_NS: Duration = Duration::from_nanos(400);
-const WS2812_TO0L_NS: Duration = Duration::from_nanos(850);
-const WS2812_TO1H_NS: Duration = Duration::from_nanos(800);
-const WS2812_TO1L_NS: Duration = Duration::from_nanos(450);
+/// T0H duration time (0 code, high voltage time)
+const WS2812_T0H_NS: Duration = Duration::from_nanos(400);
+/// T0L duration time (0 code, low voltage time)
+const WS2812_T0L_NS: Duration = Duration::from_nanos(850);
+/// T1H duration time (1 code, high voltage time)
+const WS2812_T1H_NS: Duration = Duration::from_nanos(800);
+/// T1L duration time (1 code, low voltage time)
+const WS2812_T1L_NS: Duration = Duration::from_nanos(450);
 
+/// Converter to a sequence of RMT items.
 #[repr(C)]
 struct Ws2812Esp32RmtItemEncoder {
+    /// The RMT item that represents a 0 code.
     bit0: rmt_item32_t,
+    /// The RMT item that represents a 1 code.
     bit1: rmt_item32_t,
 }
 
 impl Ws2812Esp32RmtItemEncoder {
+    /// Creates a new encoder with the given clock frequency.
+    ///
+    /// # Arguments
+    ///
+    /// * `clock_hz` - The clock frequency.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the clock frequency is invalid or if the RMT item encoder cannot be created.
     fn new(clock_hz: Hertz) -> Result<Self, EspError> {
         let (t0h, t0l, t1h, t1l) = (
-            Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_TO0H_NS)?,
-            Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_TO0L_NS)?,
-            Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_TO1H_NS)?,
-            Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_TO1L_NS)?,
+            Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_T0H_NS)?,
+            Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_T0L_NS)?,
+            Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_T1H_NS)?,
+            Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_T1L_NS)?,
         );
 
         let (bit0, bit1) = {
@@ -38,6 +54,15 @@ impl Ws2812Esp32RmtItemEncoder {
         Ok(Self { bit0, bit1 })
     }
 
+    /// Encodes a block of data as a sequence of RMT items.
+    ///
+    /// # Arguments
+    ///
+    /// * `src` - The block of data to encode.
+    ///
+    /// # Returns
+    ///
+    /// An iterator over the RMT items that represent the encoded data.
     fn encode_iter_blocking<'a, 'b, T>(
         &'a self,
         src: T,
