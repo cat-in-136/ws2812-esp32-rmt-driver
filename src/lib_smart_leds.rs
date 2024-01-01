@@ -76,6 +76,38 @@ where
     }
 }
 
+impl<
+        'd,
+        CSmart,
+        const N: usize,
+        const R_ORDER: usize,
+        const G_ORDER: usize,
+        const B_ORDER: usize,
+        const W_ORDER: usize,
+    > LedPixelEsp32Rmt<'d, CSmart, LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>>
+where
+    LedPixelColorImpl<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>: From<CSmart>,
+{
+    /// Writes pixel data from a color sequence to the driver without data copy
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an RMT driver error occurred.
+    pub fn write_nocopy<T, I>(&mut self, iterator: T) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        T: Iterator<Item = I> + Send,
+        I: Into<CSmart>,
+    {
+        self.driver
+            .write_val_iter_blocking(iterator.flat_map(|color| {
+                let c =
+                    LedPixelColorImpl::<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>::from(color.into());
+                c.0
+            }))?;
+        Ok(())
+    }
+}
+
 impl<'d, CSmart, CDev> SmartLedsWrite for LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
@@ -83,6 +115,11 @@ where
     type Error = Ws2812Esp32RmtDriverError;
     type Color = CSmart;
 
+    /// Writes pixel data from a color sequence to the driver
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an RMT driver error occurred.
     fn write<T, I>(&mut self, iterator: T) -> Result<(), Self::Error>
     where
         T: Iterator<Item = I>,
@@ -92,7 +129,7 @@ where
             vec.extend_from_slice(CDev::from(color.into()).as_ref());
             vec
         });
-        self.driver.write_iter_blocking(pixel_data.iter())?;
+        self.driver.write_ptr_iter_blocking(pixel_data.iter())?;
         Ok(())
     }
 }

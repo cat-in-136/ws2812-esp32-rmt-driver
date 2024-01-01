@@ -116,7 +116,7 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         Ok(Self { tx, encoder })
     }
 
-    /// Writes pixel data from a pixel-byte sequence to the IO pin.
+    /// Writes pixel data from a pixel-byte-pointer sequence to the IO pin.
     ///
     /// Byte count per LED pixel and channel order is not handled by this method.
     /// The pixel data sequence has to be correctly laid out depending on the LED strip model.
@@ -130,7 +130,7 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// Iteration of `pixel_sequence` happens inside an interrupt handler so beware of side-effects
     /// that don't work in interrupt handlers.
     /// See [esp_idf_hal::rmt::TxRmtDriver#start_iter_blocking()] for details.
-    pub fn write_iter_blocking<'a, 'b, T>(
+    pub fn write_ptr_iter_blocking<'a, 'b, T>(
         &'a mut self,
         pixel_sequence: T,
     ) -> Result<(), Ws2812Esp32RmtDriverError>
@@ -143,7 +143,34 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         Ok(())
     }
 
-    /// Writes pixel data from a pixel-byte sequence to the IO pin.
+    /// Writes pixel data from a pixel-byte-value sequence to the IO pin.
+    ///
+    /// Byte count per LED pixel and channel order is not handled by this method.
+    /// The pixel data sequence has to be correctly laid out depending on the LED strip model.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an RMT driver error occurred.
+    ///
+    /// # Warning
+    ///
+    /// Iteration of `pixel_sequence` happens inside an interrupt handler so beware of side-effects
+    /// that don't work in interrupt handlers.
+    /// See [esp_idf_hal::rmt::TxRmtDriver#start_iter_blocking()] for details.
+    pub fn write_val_iter_blocking<'a, 'b, T>(
+        &'a mut self,
+        pixel_sequence: T,
+    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        'b: 'a,
+        T: Iterator<Item = u8> + Send + 'b,
+    {
+        let signal = self.encoder.encode_iter(pixel_sequence);
+        self.tx.start_iter_blocking(signal)?;
+        Ok(())
+    }
+
+    /// Writes pixel data from a pixel-byte-pointer sequence to the IO pin.
     ///
     /// Byte count per LED pixel and channel order is not handled by this method.
     /// The pixel data sequence has to be correctly laid out depending on the LED strip model.
@@ -159,7 +186,8 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// Iteration of `pixel_sequence` happens inside an interrupt handler so beware of side-effects
     /// that don't work in interrupt handlers.
     /// See [esp_idf_hal::rmt::TxRmtDriver#start_iter()] for details.
-    pub fn write_iter<'b, T>(
+    #[cfg(feature = "unstable")]
+    pub fn write_ptr_iter<'b, T>(
         &'static mut self,
         pixel_sequence: T,
     ) -> Result<(), Ws2812Esp32RmtDriverError>
@@ -167,6 +195,35 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         T: Iterator<Item = &'b u8> + Send + 'static,
     {
         let signal = self.encoder.encode_iter(pixel_sequence.cloned());
+        self.tx.start_iter(signal)?;
+        Ok(())
+    }
+
+    /// Writes pixel data from a pixel-byte-value sequence to the IO pin.
+    ///
+    /// Byte count per LED pixel and channel order is not handled by this method.
+    /// The pixel data sequence has to be correctly laid out depending on the LED strip model.
+    ///
+    /// Note that this requires `pixel_sequence` to be [`Box`]ed for an allocation free version see [`Self::write_iter_blocking`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an RMT driver error occurred.
+    ///
+    /// # Warning
+    ///
+    /// Iteration of `pixel_sequence` happens inside an interrupt handler so beware of side-effects
+    /// that don't work in interrupt handlers.
+    /// See [esp_idf_hal::rmt::TxRmtDriver#start_iter()] for details.
+    #[cfg(feature = "unstable")]
+    pub fn write_val_iter<'b, T>(
+        &'static mut self,
+        pixel_sequence: T,
+    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        T: Iterator<Item = u8> + Send + 'static,
+    {
+        let signal = self.encoder.encode_iter(pixel_sequence);
         self.tx.start_iter(signal)?;
         Ok(())
     }

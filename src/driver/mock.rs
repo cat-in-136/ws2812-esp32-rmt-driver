@@ -26,8 +26,8 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         })
     }
 
-    /// Writes GRB pixel binary iterator.
-    pub fn write_iter_blocking<'a, 'b, T>(
+    /// Writes a pixel-byte-pointer sequence.
+    pub fn write_ptr_iter_blocking<'a, 'b, T>(
         &'a mut self,
         pixel_sequence: T,
     ) -> Result<(), Ws2812Esp32RmtDriverError>
@@ -38,6 +38,47 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         self.pixel_data = Some(pixel_sequence.cloned().collect());
         Ok(())
     }
+
+    /// Writes a pixel-byte-value sequence.
+    pub fn write_val_iter_blocking<'a, 'b, T>(
+        &'a mut self,
+        pixel_sequence: T,
+    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        'b: 'a,
+        T: Iterator<Item = u8> + Send + 'b,
+    {
+        self.pixel_data = Some(pixel_sequence.collect());
+        Ok(())
+    }
+
+    /// Writes a pixel-byte-pointer sequence.
+    #[cfg(feature = "unstable")]
+    pub fn write_ptr_iter<'a, 'b, T>(
+        &'a mut self,
+        pixel_sequence: T,
+    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        'b: 'a,
+        T: Iterator<Item = &'b u8> + Send + 'b,
+    {
+        self.pixel_data = Some(pixel_sequence.cloned().collect());
+        Ok(())
+    }
+
+    /// Writes a pixel-byte-value sequence.
+    #[cfg(feature = "unstable")]
+    pub fn write_val_iter<'a, 'b, T>(
+        &'a mut self,
+        pixel_sequence: T,
+    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    where
+        'b: 'a,
+        T: Iterator<Item = u8> + Send + 'b,
+    {
+        self.pixel_data = Some(pixel_sequence.collect());
+        Ok(())
+    }
 }
 
 #[test]
@@ -46,6 +87,12 @@ fn test_ws2812_esp32_rmt_driver_mock() {
 
     let mut driver = Ws2812Esp32RmtDriver::new().unwrap();
     assert_eq!(driver.pixel_data, None);
-    driver.write_iter_blocking(sample_data.iter()).unwrap();
+    driver.write_ptr_iter_blocking(sample_data.iter()).unwrap();
+    assert_eq!(driver.pixel_data.unwrap(), &sample_data);
+
+    driver.pixel_data = None;
+    driver
+        .write_val_iter_blocking(sample_data.iter().cloned())
+        .unwrap();
     assert_eq!(driver.pixel_data.unwrap(), &sample_data);
 }
