@@ -63,6 +63,7 @@ impl Ws2812Esp32RmtItemEncoder {
     /// # Returns
     ///
     /// An iterator over the RMT items that represent the encoded data.
+    #[inline]
     fn encode_iter_blocking<'a, 'b, T>(
         &'a self,
         src: T,
