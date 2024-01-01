@@ -26,21 +26,8 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         })
     }
 
-    /// Writes a pixel-byte-pointer sequence.
-    pub fn write_ptr_iter_blocking<'a, 'b, T>(
-        &'a mut self,
-        pixel_sequence: T,
-    ) -> Result<(), Ws2812Esp32RmtDriverError>
-    where
-        'b: 'a,
-        T: Iterator<Item = &'b u8> + Send + 'b,
-    {
-        self.pixel_data = Some(pixel_sequence.cloned().collect());
-        Ok(())
-    }
-
-    /// Writes a pixel-byte-value sequence.
-    pub fn write_val_iter_blocking<'a, 'b, T>(
+    /// Writes a pixel-byte sequence.
+    pub fn write_blocking<'a, 'b, T>(
         &'a mut self,
         pixel_sequence: T,
     ) -> Result<(), Ws2812Esp32RmtDriverError>
@@ -52,23 +39,9 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         Ok(())
     }
 
-    /// Writes a pixel-byte-pointer sequence.
+    /// Writes a pixel-byte sequence.
     #[cfg(feature = "unstable")]
-    pub fn write_ptr_iter<'a, 'b, T>(
-        &'a mut self,
-        pixel_sequence: T,
-    ) -> Result<(), Ws2812Esp32RmtDriverError>
-    where
-        'b: 'a,
-        T: Iterator<Item = &'b u8> + Send + 'b,
-    {
-        self.pixel_data = Some(pixel_sequence.cloned().collect());
-        Ok(())
-    }
-
-    /// Writes a pixel-byte-value sequence.
-    #[cfg(feature = "unstable")]
-    pub fn write_val_iter<'a, 'b, T>(
+    pub fn write<'a, 'b, T>(
         &'a mut self,
         pixel_sequence: T,
     ) -> Result<(), Ws2812Esp32RmtDriverError>
@@ -87,12 +60,6 @@ fn test_ws2812_esp32_rmt_driver_mock() {
 
     let mut driver = Ws2812Esp32RmtDriver::new().unwrap();
     assert_eq!(driver.pixel_data, None);
-    driver.write_ptr_iter_blocking(sample_data.iter()).unwrap();
-    assert_eq!(driver.pixel_data.unwrap(), &sample_data);
-
-    driver.pixel_data = None;
-    driver
-        .write_val_iter_blocking(sample_data.iter().cloned())
-        .unwrap();
+    driver.write_blocking(sample_data.iter().cloned()).unwrap();
     assert_eq!(driver.pixel_data.unwrap(), &sample_data);
 }

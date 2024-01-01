@@ -98,12 +98,10 @@ where
         T: Iterator<Item = I> + Send,
         I: Into<CSmart>,
     {
-        self.driver
-            .write_val_iter_blocking(iterator.flat_map(|color| {
-                let c =
-                    LedPixelColorImpl::<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>::from(color.into());
-                c.0
-            }))?;
+        self.driver.write_blocking(iterator.flat_map(|color| {
+            let c = LedPixelColorImpl::<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>::from(color.into());
+            c.0
+        }))?;
         Ok(())
     }
 }
@@ -129,7 +127,7 @@ where
             vec.extend_from_slice(CDev::from(color.into()).as_ref());
             vec
         });
-        self.driver.write_ptr_iter_blocking(pixel_data.iter())?;
+        self.driver.write_blocking(pixel_data.into_iter())?;
         Ok(())
     }
 }

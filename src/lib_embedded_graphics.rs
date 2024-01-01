@@ -130,7 +130,7 @@ where
     /// Write changes from a framebuffer to the LED pixels
     pub fn flush(&mut self) -> Result<(), Ws2812Esp32RmtDriverError> {
         if self.changed {
-            self.driver.write_ptr_iter_blocking(self.data.iter())?;
+            self.driver.write_blocking(self.data.iter().copied())?;
             self.changed = false;
         }
         Ok(())
