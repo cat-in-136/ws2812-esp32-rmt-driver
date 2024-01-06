@@ -2,7 +2,7 @@
 
 /// LED pixel color trait
 pub trait LedPixelColor:
-    Ord + PartialOrd + Eq + PartialEq + Clone + AsRef<[u8]> + AsMut<[u8]>
+    Ord + PartialOrd + Eq + PartialEq + Clone + Sync + AsRef<[u8]> + AsMut<[u8]>
 {
     /// byte per pixel. e.g. 3 for typical RGB.
     const BPP: usize;

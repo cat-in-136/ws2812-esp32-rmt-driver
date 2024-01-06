@@ -1,3 +1,4 @@
+use esp_idf_hal::peripherals::Peripherals;
 use esp_idf_sys::*;
 use smart_leds::hsv::{hsv2rgb, Hsv};
 use smart_leds_trait::SmartLedsWrite;
@@ -10,7 +11,10 @@ fn main() -> ! {
     // or else some patches to the runtime implemented by esp-idf-sys might not link properly.
     esp_idf_sys::link_patches();
 
-    let mut ws2812 = Ws2812Esp32Rmt::new(0, 27).unwrap();
+    let peripherals = Peripherals::take().unwrap();
+    let led_pin = peripherals.pins.gpio27;
+    let channel = peripherals.rmt.channel0;
+    let mut ws2812 = Ws2812Esp32Rmt::new(channel, led_pin).unwrap();
 
     println!("Start NeoPixel rainbow!");
 
