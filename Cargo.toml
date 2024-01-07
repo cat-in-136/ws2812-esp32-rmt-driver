@@ -30,7 +30,6 @@ embedded-graphics = "0.8"
 
 [build-dependencies]
 embuild = "0.31"
-anyhow = "1"
 
 [profile.release]
 strip = true
