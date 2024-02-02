@@ -10,6 +10,11 @@ linker = "ldproxy"
 runner = "espflash --monitor"
 rustflags = [ "--cfg",  "espidf_time64"] # Extending time_t for ESP IDF 5: https://github.com/esp-rs/rust/issues/110
 
+[target.riscv32imc-esp-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+rustflags = ["--cfg", "espidf_time64", "-C", "default-linker-libraries"]
+
 [unstable]
 build-std = ["std", "panic_abort"]
 build-std-features = ["panic_immediate_abort"]
