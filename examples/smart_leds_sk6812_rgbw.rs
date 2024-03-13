@@ -1,3 +1,4 @@
+#![cfg(feature = "smart-leds-trait")]
 use esp_idf_hal::peripherals::Peripherals;
 use smart_leds_trait::{SmartLedsWrite, White};
 use std::thread::sleep;
