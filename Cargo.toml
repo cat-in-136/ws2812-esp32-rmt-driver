@@ -16,7 +16,7 @@ default = ["smart-leds-trait", "embedded-graphics-core"]
 unstable = []
 
 [dependencies]
-smart-leds-trait = { version = "0.2", optional = true }
+smart-leds-trait = { version = "0.3", optional = true }
 embedded-graphics-core = { version = "0.4", optional = true }
 thiserror = "1"
 

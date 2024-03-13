@@ -95,13 +95,16 @@ where
     /// Returns an error if an RMT driver error occurred.
     pub fn write_nocopy<T, I>(&mut self, iterator: T) -> Result<(), Ws2812Esp32RmtDriverError>
     where
-        T: Iterator<Item = I> + Send,
+        T: IntoIterator<Item = I>,
         I: Into<CSmart>,
+        <T as IntoIterator>::IntoIter: Send,
     {
-        self.driver.write_blocking(iterator.flat_map(|color| {
-            let c = LedPixelColorImpl::<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>::from(color.into());
-            c.0
-        }))?;
+        self.driver
+            .write_blocking(iterator.into_iter().flat_map(|color| {
+                let c =
+                    LedPixelColorImpl::<N, R_ORDER, G_ORDER, B_ORDER, W_ORDER>::from(color.into());
+                c.0
+            }))?;
         Ok(())
     }
 }
@@ -120,10 +123,10 @@ where
     /// Returns an error if an RMT driver error occurred.
     fn write<T, I>(&mut self, iterator: T) -> Result<(), Self::Error>
     where
-        T: Iterator<Item = I>,
+        T: IntoIterator<Item = I>,
         I: Into<Self::Color>,
     {
-        let pixel_data = iterator.fold(Vec::new(), |mut vec, color| {
+        let pixel_data = iterator.into_iter().fold(Vec::new(), |mut vec, color| {
             vec.extend_from_slice(CDev::from(color.into()).as_ref());
             vec
         });
