@@ -5,13 +5,11 @@ pub mod driver;
 
 pub use driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 
-#[cfg(all(feature = "embedded-graphics-core", feature = "unstable"))]
+#[cfg(feature = "embedded-graphics-core")]
 pub mod lib_embedded_graphics;
 
-#[cfg(all(feature = "smart-leds-trait", feature = "unstable"))]
+#[cfg(feature = "smart-leds-trait")]
 pub mod lib_smart_leds;
-#[cfg(all(feature = "smart-leds-trait", not(feature = "unstable")))]
-mod lib_smart_leds;
 
 #[cfg(feature = "smart-leds-trait")]
 pub use lib_smart_leds::{LedPixelEsp32Rmt, Ws2812Esp32Rmt, RGBW8};

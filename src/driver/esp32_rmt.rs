@@ -159,7 +159,6 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// Iteration of `pixel_sequence` happens inside an interrupt handler so beware of side-effects
     /// that don't work in interrupt handlers.
     /// See [esp_idf_hal::rmt::TxRmtDriver#start_iter()] for details.
-    #[cfg(feature = "unstable")]
     pub fn write<'b, T>(
         &'static mut self,
         pixel_sequence: T,

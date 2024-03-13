@@ -40,7 +40,6 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     }
 
     /// Writes a pixel-byte sequence.
-    #[cfg(feature = "unstable")]
     pub fn write<'a, 'b, T>(
         &'a mut self,
         pixel_sequence: T,

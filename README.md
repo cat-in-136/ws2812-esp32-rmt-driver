@@ -51,10 +51,10 @@ $ cargo espflash
 
 ## Features
 
-* `features = ["embedded-graphics-core", "unstable"]` to enable embedded-graphics
+* `features = ["embedded-graphics-core"]` to enable embedded-graphics
   API `ws2812_esp32_rmt_driver::lib_embedded_graphics`.
-* `features = ["smart-leds"]` to enable minimum smart-leds API.
-* `features = ["smart-leds", "unstable"]` to enable detailed smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`.
+* `features = ["smart-leds"]` to enable smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`.
+* default feature to enable just only driver API.
 
 ## Development
 

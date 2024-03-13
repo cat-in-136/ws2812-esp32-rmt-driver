@@ -1,4 +1,4 @@
-#![cfg(all(feature = "unstable", feature = "embedded-graphics-core"))]
+#![cfg(feature = "embedded-graphics-core")]
 use embedded_graphics::pixelcolor::Rgb888;
 use embedded_graphics::prelude::*;
 use embedded_graphics::primitives::{Circle, PrimitiveStyle, Rectangle, Triangle};
