@@ -1,9 +1,9 @@
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripheral::Peripheral;
 use esp_idf_hal::rmt::config::TransmitConfig;
-use esp_idf_hal::rmt::{FixedLengthSignal, PinState, Pulse, RmtChannel, Signal, TxRmtDriver};
+use esp_idf_hal::rmt::{PinState, Pulse, PulseTicks, RmtChannel, Symbol, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
-use esp_idf_sys::{rmt_item32_t, EspError};
+use esp_idf_sys::EspError;
 use std::time::Duration;
 
 /// T0H duration time (0 code, high voltage time)
@@ -18,10 +18,10 @@ const WS2812_T1L_NS: Duration = Duration::from_nanos(450);
 /// Converter to a sequence of RMT items.
 #[repr(C)]
 struct Ws2812Esp32RmtItemEncoder {
-    /// The RMT item that represents a 0 code.
-    bit0: rmt_item32_t,
-    /// The RMT item that represents a 1 code.
-    bit1: rmt_item32_t,
+    tick_t0_h_ns: PulseTicks,
+    tick_t0_l_ns: PulseTicks,
+    tick_t1_h_ns: PulseTicks,
+    tick_t1_l_ns: PulseTicks,
 }
 
 impl Ws2812Esp32RmtItemEncoder {
@@ -35,23 +35,17 @@ impl Ws2812Esp32RmtItemEncoder {
     ///
     /// Returns an error if the clock frequency is invalid or if the RMT item encoder cannot be created.
     fn new(clock_hz: Hertz) -> Result<Self, EspError> {
-        let (t0h, t0l, t1h, t1l) = (
-            Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_T0H_NS)?,
-            Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_T0L_NS)?,
-            Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_T1H_NS)?,
-            Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_T1L_NS)?,
-        );
+        let tick_t0_h_ns = PulseTicks::new_with_duration(clock_hz, &WS2812_T0H_NS)?;
+        let tick_t0_l_ns = PulseTicks::new_with_duration(clock_hz, &WS2812_T0L_NS)?;
+        let tick_t1_h_ns = PulseTicks::new_with_duration(clock_hz, &WS2812_T1H_NS)?;
+        let tick_t1_l_ns = PulseTicks::new_with_duration(clock_hz, &WS2812_T1L_NS)?;
 
-        let (bit0, bit1) = {
-            let mut bit0_sig = FixedLengthSignal::<1>::new();
-            let mut bit1_sig = FixedLengthSignal::<1>::new();
-            bit0_sig.set(0, &(t0h, t0l))?;
-            bit1_sig.set(0, &(t1h, t1l))?;
-
-            (bit0_sig.as_slice()[0], bit1_sig.as_slice()[0])
-        };
-
-        Ok(Self { bit0, bit1 })
+        Ok(Self {
+            tick_t0_h_ns,
+            tick_t0_l_ns,
+            tick_t1_h_ns,
+            tick_t1_l_ns,
+        })
     }
 
     /// Encodes a block of data as a sequence of RMT items.
@@ -64,17 +58,24 @@ impl Ws2812Esp32RmtItemEncoder {
     ///
     /// An iterator over the RMT items that represent the encoded data.
     #[inline]
-    fn encode_iter<'a, 'b, T>(&'a self, src: T) -> impl Iterator<Item = rmt_item32_t> + Send + 'a
+    fn encode_iter<'a, 'b, T>(&'a self, src: T) -> impl Iterator<Item = Symbol> + Send + 'a
     where
         'b: 'a,
         T: Iterator<Item = u8> + Send + 'b,
     {
+        let (t0h, t0l, t1h, t1l) = (
+            Pulse::new(PinState::High, self.tick_t0_h_ns),
+            Pulse::new(PinState::Low, self.tick_t0_l_ns),
+            Pulse::new(PinState::High, self.tick_t1_h_ns),
+            Pulse::new(PinState::Low, self.tick_t1_l_ns),
+        );
+
         src.flat_map(move |v| {
             (0..(u8::BITS as usize)).map(move |i| {
                 if v & (1 << (7 - i)) != 0 {
-                    self.bit1
+                    Symbol::new(t1h, t1l)
                 } else {
-                    self.bit0
+                    Symbol::new(t0h, t0l)
                 }
             })
         })
