@@ -1,3 +1,4 @@
+#![cfg(feature = "smart-leds-trait")]
 use esp_idf_hal::peripherals::Peripherals;
 use esp_idf_sys::*;
 use smart_leds::hsv::{hsv2rgb, Hsv};
