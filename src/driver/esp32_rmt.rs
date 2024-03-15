@@ -1,9 +1,9 @@
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripheral::Peripheral;
 use esp_idf_hal::rmt::config::TransmitConfig;
-use esp_idf_hal::rmt::{FixedLengthSignal, PinState, Pulse, RmtChannel, Signal, TxRmtDriver};
+use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
-use esp_idf_sys::{rmt_item32_t, EspError};
+use esp_idf_sys::EspError;
 use std::time::Duration;
 
 /// T0H duration time (0 code, high voltage time)
@@ -19,9 +19,9 @@ const WS2812_T1L_NS: Duration = Duration::from_nanos(450);
 #[repr(C)]
 struct Ws2812Esp32RmtItemEncoder {
     /// The RMT item that represents a 0 code.
-    bit0: rmt_item32_t,
+    bit0: Symbol,
     /// The RMT item that represents a 1 code.
-    bit1: rmt_item32_t,
+    bit1: Symbol,
 }
 
 impl Ws2812Esp32RmtItemEncoder {
@@ -35,21 +35,14 @@ impl Ws2812Esp32RmtItemEncoder {
     ///
     /// Returns an error if the clock frequency is invalid or if the RMT item encoder cannot be created.
     fn new(clock_hz: Hertz) -> Result<Self, EspError> {
-        let (t0h, t0l, t1h, t1l) = (
+        let bit0 = Symbol::new(
             Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_T0H_NS)?,
             Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_T0L_NS)?,
+        );
+        let bit1 = Symbol::new(
             Pulse::new_with_duration(clock_hz, PinState::High, &WS2812_T1H_NS)?,
             Pulse::new_with_duration(clock_hz, PinState::Low, &WS2812_T1L_NS)?,
         );
-
-        let (bit0, bit1) = {
-            let mut bit0_sig = FixedLengthSignal::<1>::new();
-            let mut bit1_sig = FixedLengthSignal::<1>::new();
-            bit0_sig.set(0, &(t0h, t0l))?;
-            bit1_sig.set(0, &(t1h, t1l))?;
-
-            (bit0_sig.as_slice()[0], bit1_sig.as_slice()[0])
-        };
 
         Ok(Self { bit0, bit1 })
     }
@@ -64,7 +57,7 @@ impl Ws2812Esp32RmtItemEncoder {
     ///
     /// An iterator over the RMT items that represent the encoded data.
     #[inline]
-    fn encode_iter<'a, 'b, T>(&'a self, src: T) -> impl Iterator<Item = rmt_item32_t> + Send + 'a
+    fn encode_iter<'a, 'b, T>(&'a self, src: T) -> impl Iterator<Item = Symbol> + Send + 'a
     where
         'b: 'a,
         T: Iterator<Item = u8> + Send + 'b,
