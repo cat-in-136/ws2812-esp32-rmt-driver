@@ -1,11 +1,9 @@
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripheral::Peripheral;
 use esp_idf_hal::rmt::config::TransmitConfig;
-use esp_idf_hal::rmt::{
-    FixedLengthSignal, PinState, Pulse, RmtChannel, Signal, Symbol, TxRmtDriver,
-};
+use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
-use esp_idf_sys::{rmt_item32_t, EspError};
+use esp_idf_sys::EspError;
 use std::mem::MaybeUninit;
 use std::time::Duration;
 
