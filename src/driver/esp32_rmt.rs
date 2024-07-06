@@ -4,7 +4,6 @@ use esp_idf_hal::rmt::config::TransmitConfig;
 use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
 use esp_idf_sys::EspError;
-use std::mem::MaybeUninit;
 use std::time::Duration;
 
 /// T0H duration time (0 code, high voltage time)
@@ -65,21 +64,12 @@ impl Ws2812Esp32RmtItemEncoder {
         'b: 'a,
         T: Iterator<Item = u8> + Send + 'b,
     {
-        // TODO: remove unsafe copy once new esp-idf-hal is released where Symbol is Copy
         src.flat_map(move |v| {
             (0..(u8::BITS as usize)).map(move |i| {
                 if v & (1 << (7 - i)) != 0 {
-                    unsafe {
-                        let mut bit1: Symbol = MaybeUninit::uninit().assume_init();
-                        std::ptr::copy(&self.bit1, &mut bit1, 1);
-                        bit1
-                    }
+                    self.bit1
                 } else {
-                    unsafe {
-                        let mut bit0: Symbol = MaybeUninit::uninit().assume_init();
-                        std::ptr::copy(&self.bit0, &mut bit0, 1);
-                        bit0
-                    }
+                    self.bit0
                 }
             })
         })
