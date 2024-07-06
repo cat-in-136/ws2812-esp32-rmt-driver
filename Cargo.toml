@@ -20,7 +20,7 @@ thiserror = "1"
 
 [target.'cfg(target_vendor = "espressif")'.dependencies]
 esp-idf-sys = { version = "0.35", features = ["binstart"] }
-esp-idf-hal = ">=0.43.2"
+esp-idf-hal = "0.44"
 
 [dev-dependencies]
 smart-leds = "0.3"
