@@ -51,10 +51,28 @@ $ cargo espflash
 
 ## Features
 
+|Features                |Default|Description                                                           |
+|------------------------|-------|----------------------------------------------------------------------|
+|`embedded_graphics_core`|       |embedded-graphics API `ws2812_esp32_rmt_driver::lib_embedded_graphics`|
+|`smart-leds-trait`      |       |smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`              |
+|`std`                   |x      |use standard library `std`                                            |
+|`alloc`                 |x      |use memory allocator (heap)                                           |
+
+Some examples:
+
 * `features = ["embedded-graphics-core"]` to enable embedded-graphics
   API `ws2812_esp32_rmt_driver::lib_embedded_graphics`.
 * `features = ["smart-leds-trait"]` to enable smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`.
 * default feature to enable just only driver API.
+
+## no_std
+
+To use `no_std`, disable `default` feature. Then, `std` feature is disabled and this library get compatible with `no_std`.
+
+Support for `no_std` is still incomplete. Because a memory allocator (heap) is required as of now, the `alloc` feature MUST be enabled.
+
+For example, `default-feature = false, features = ["alloc", "smart-leds-trait"]` to enable smart-leds API
+`ws2812_esp32_rmt_driver::lib_smart_leds` for `no_std` environment.
 
 ## Development
 

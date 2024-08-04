@@ -1,6 +1,8 @@
 use core::fmt;
 use core::marker::PhantomData;
 
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::error::Error;
 
