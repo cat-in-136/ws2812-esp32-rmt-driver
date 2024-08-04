@@ -79,6 +79,7 @@ impl Ws2812Esp32RmtItemEncoder {
 
 /// WS2812 ESP32 RMT Driver error.
 #[derive(Snafu, Debug)]
+#[repr(transparent)]
 #[snafu(transparent)]
 pub struct Ws2812Esp32RmtDriverError {
     source: EspError,
