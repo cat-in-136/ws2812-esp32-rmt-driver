@@ -17,19 +17,19 @@ fn main() -> ! {
     let mut ws2812 = LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(channel, led_pin).unwrap();
 
     loop {
-        let pixels = std::iter::repeat(RGBW8::from((6, 0, 0, White(0)))).take(25);
+        let pixels = std::iter::repeat(RGBW8::new_alpha(6, 0, 0, White(0))).take(25);
         ws2812.write(pixels).unwrap();
         sleep(Duration::from_millis(1000));
 
-        let pixels = std::iter::repeat(RGBW8::from((0, 6, 0, White(0)))).take(25);
+        let pixels = std::iter::repeat(RGBW8::new_alpha(0, 6, 0, White(0))).take(25);
         ws2812.write(pixels).unwrap();
         sleep(Duration::from_millis(1000));
 
-        let pixels = std::iter::repeat(RGBW8::from((0, 0, 6, White(0)))).take(25);
+        let pixels = std::iter::repeat(RGBW8::new_alpha(0, 0, 6, White(0))).take(25);
         ws2812.write(pixels).unwrap();
         sleep(Duration::from_millis(1000));
 
-        let pixels = std::iter::repeat(RGBW8::from((0, 0, 0, White(6)))).take(25);
+        let pixels = std::iter::repeat(RGBW8::new_alpha(0, 0, 0, White(6))).take(25);
         ws2812.write(pixels).unwrap();
         sleep(Duration::from_millis(1000));
     }
