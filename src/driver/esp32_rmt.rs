@@ -1,11 +1,15 @@
+use core::convert::From;
+use core::fmt;
+use core::time::Duration;
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripheral::Peripheral;
 use esp_idf_hal::rmt::config::TransmitConfig;
 use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
 use esp_idf_sys::EspError;
-use std::convert::From;
-use std::time::Duration;
+
+#[cfg(feature = "std")]
+use std::error::Error;
 
 /// T0H duration time (0 code, high voltage time)
 const WS2812_T0H_NS: Duration = Duration::from_nanos(400);
@@ -85,14 +89,14 @@ pub struct Ws2812Esp32RmtDriverError {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Ws2812Esp32RmtDriverError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl Error for Ws2812Esp32RmtDriverError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.source)
     }
 }
 
-impl std::fmt::Display for Ws2812Esp32RmtDriverError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Ws2812Esp32RmtDriverError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.source.fmt(f)
     }
 }

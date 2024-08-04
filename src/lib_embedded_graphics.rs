@@ -2,11 +2,11 @@
 
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
+use core::marker::PhantomData;
 use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
 use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
-use std::marker::PhantomData;
 
 #[cfg(target_vendor = "espressif")]
 use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};

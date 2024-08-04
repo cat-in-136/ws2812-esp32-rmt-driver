@@ -1,14 +1,18 @@
-use std::marker::PhantomData;
+use core::fmt;
+use core::marker::PhantomData;
+
+#[cfg(feature = "std")]
+use std::error::Error;
 
 /// WS2812 ESP32 RMT Driver error.
 #[derive(Debug)]
 pub struct Ws2812Esp32RmtDriverError;
 
 #[cfg(feature = "std")]
-impl std::error::Error for Ws2812Esp32RmtDriverError {}
+impl Error for Ws2812Esp32RmtDriverError {}
 
-impl std::fmt::Display for Ws2812Esp32RmtDriverError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Ws2812Esp32RmtDriverError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "mock Ws2812Esp32RmtDriverError")
     }
 }
