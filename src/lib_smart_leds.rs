@@ -2,11 +2,14 @@
 
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
+use core::marker::PhantomData;
 use smart_leds_trait::{SmartLedsWrite, RGB8, RGBW};
-use std::marker::PhantomData;
 
 #[cfg(target_vendor = "espressif")]
 use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};
+
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
 
 /// 8-bit RGBW (RGB + white)
 pub type RGBW8 = RGBW<u8, u8>;

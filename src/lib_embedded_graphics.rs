@@ -2,14 +2,17 @@
 
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
+use core::marker::PhantomData;
 use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
 use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
-use std::marker::PhantomData;
 
 #[cfg(target_vendor = "espressif")]
 use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};
+
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+use alloc::vec::Vec;
 
 /// LED pixel shape
 pub trait LedPixelShape {
@@ -77,7 +80,7 @@ where
         pin: impl Peripheral<P = impl OutputPin> + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
-        let data = std::iter::repeat(0)
+        let data = core::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)
             .collect::<Vec<_>>();
         Ok(Self {
@@ -93,7 +96,7 @@ where
     #[cfg(not(target_vendor = "espressif"))]
     pub fn new() -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new()?;
-        let data = std::iter::repeat(0)
+        let data = core::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)
             .collect::<Vec<_>>();
         Ok(Self {
@@ -252,7 +255,7 @@ mod test {
         assert_eq!(draw.changed, true);
         assert_eq!(
             draw.data,
-            std::iter::repeat(0).take(150).collect::<Vec<_>>()
+            core::iter::repeat(0).take(150).collect::<Vec<_>>()
         );
     }
 
@@ -280,7 +283,7 @@ mod test {
         assert_eq!(draw.changed, true);
         assert_eq!(
             draw.data,
-            std::iter::repeat([0x08, 0x07, 0x0A])
+            core::iter::repeat([0x08, 0x07, 0x0A])
                 .take(50)
                 .flatten()
                 .collect::<Vec<_>>()

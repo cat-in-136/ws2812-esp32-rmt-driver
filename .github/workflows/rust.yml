@@ -28,18 +28,21 @@ jobs:
           ws2812-esp32-rmt-driver/target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
-      run: cargo build --verbose
+      run: |
+        cargo build
+        cargo build --all-features
+        cargo build --no-default-features --features=alloc
+        cargo build --no-default-features --features=alloc,smart-leds-trait,embedded-graphics-core
       working-directory: ./ws2812-esp32-rmt-driver
-    - name: Build example m5atom
+    - name: Build examples
       run: cargo build --examples --all-features
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Test
       run: |
         cargo +stable test --target x86_64-unknown-linux-gnu --lib
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --all-features
-        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features
-        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features smart-leds-trait
-        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features embedded-graphics-core
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features std,smart-leds-trait
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features std,embedded-graphics-core
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Publish (Dry run)
       run: cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
