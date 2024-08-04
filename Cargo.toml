@@ -23,11 +23,11 @@ esp-idf-sys = { version = "0.35", features = ["binstart"] }
 esp-idf-hal = "0.44"
 
 [dev-dependencies]
-smart-leds = "0.3"
+smart-leds = "0.4"
 embedded-graphics = "0.8"
 
 [build-dependencies]
-embuild = "0.31"
+embuild = "0.32"
 
 [profile.release]
 strip = true
