@@ -74,6 +74,10 @@ Support for `no_std` is still incomplete. Because a memory allocator (heap) is r
 For example, `default-feature = false, features = ["alloc", "smart-leds-trait"]` to enable smart-leds API
 `ws2812_esp32_rmt_driver::lib_smart_leds` for `no_std` environment.
 
+This library is intended for use with espidf.
+For bare-metal environments (i.e. use with [esp-hal](https://crates.io/crates/esp-hal/)),
+use the espressif official crate [esp-hal-smartled](https://crates.io/crates/esp-hal-smartled).
+
 ## Development
 
 To run the test locally, specify the local toolchain (`stable`, `nightly`, etc...) and target explicitly and disable
