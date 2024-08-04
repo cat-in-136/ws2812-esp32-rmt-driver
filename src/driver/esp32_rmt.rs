@@ -88,6 +88,16 @@ pub struct Ws2812Esp32RmtDriverError {
     source: EspError,
 }
 
+#[cfg(not(feature = "std"))]
+impl Ws2812Esp32RmtDriverError {
+    /// The `EspError` source of this error, if any.
+    ///
+    /// This is a workaround function until `core::error::Error` added.
+    pub fn source(&self) -> Option<&EspError> {
+        Some(&self.source)
+    }
+}
+
 #[cfg(feature = "std")]
 impl Error for Ws2812Esp32RmtDriverError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
