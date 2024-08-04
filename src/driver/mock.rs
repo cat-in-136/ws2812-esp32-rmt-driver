@@ -1,10 +1,17 @@
-use snafu::prelude::*;
 use std::marker::PhantomData;
 
 /// WS2812 ESP32 RMT Driver error.
-#[derive(Snafu, Debug)]
-#[snafu(display("mock Ws2812Esp32RmtDriverError"))]
+#[derive(Debug)]
 pub struct Ws2812Esp32RmtDriverError;
+
+#[cfg(feature = "std")]
+impl std::error::Error for Ws2812Esp32RmtDriverError {}
+
+impl std::fmt::Display for Ws2812Esp32RmtDriverError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "mock Ws2812Esp32RmtDriverError")
+    }
+}
 
 /// Mock of Low-level WS2812 ESP32 RMT driver.
 ///

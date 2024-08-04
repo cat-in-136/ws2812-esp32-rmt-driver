@@ -4,7 +4,7 @@ use esp_idf_hal::rmt::config::TransmitConfig;
 use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
 use esp_idf_sys::EspError;
-use snafu::prelude::*;
+use std::convert::From;
 use std::time::Duration;
 
 /// T0H duration time (0 code, high voltage time)
@@ -78,11 +78,29 @@ impl Ws2812Esp32RmtItemEncoder {
 }
 
 /// WS2812 ESP32 RMT Driver error.
-#[derive(Snafu, Debug)]
+#[derive(Debug)]
 #[repr(transparent)]
-#[snafu(transparent)]
 pub struct Ws2812Esp32RmtDriverError {
     source: EspError,
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Ws2812Esp32RmtDriverError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        Some(&self.source)
+    }
+}
+
+impl std::fmt::Display for Ws2812Esp32RmtDriverError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.source.fmt(f)
+    }
+}
+
+impl From<EspError> for Ws2812Esp32RmtDriverError {
+    fn from(source: EspError) -> Self {
+        Self { source }
+    }
 }
 
 /// WS2812 ESP32 RMT driver wrapper.
