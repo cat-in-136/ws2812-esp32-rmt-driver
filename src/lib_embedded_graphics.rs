@@ -3,6 +3,7 @@
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use core::marker::PhantomData;
+use core::ops::DerefMut;
 use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
 use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
@@ -10,9 +11,6 @@ use embedded_graphics_core::Pixel;
 
 #[cfg(target_vendor = "espressif")]
 use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};
-
-#[cfg(all(not(feature = "std"), feature = "alloc"))]
-use alloc::vec::Vec;
 
 /// LED pixel shape
 pub trait LedPixelShape {
@@ -45,31 +43,47 @@ impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
     }
 }
 
+/// Default data storage type for `LedPixelDrawTarget`.
+#[cfg(feature = "std")]
+type LedPixelDrawTargetData = Vec<u8>;
+
+/// Default data storage type for `LedPixelDrawTarget`.
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+type LedPixelDrawTargetData = alloc::vec::Vec<u8>;
+
+/// Default data storage type for `LedPixelDrawTarget`.
+/// In case of heapless, allocate 256-byte capacity vector.
+#[cfg(all(not(feature = "std"), not(feature = "alloc")))]
+type LedPixelDrawTargetData = heapless::Vec<u8, 256>;
+
 /// Target for embedded-graphics drawing operations of the LED pixels.
 ///
 /// * `CDraw` - color type for embedded-graphics drawing operations
 /// * `CDev` - the LED pixel color type (device dependant). It shall be convertible from `CDraw`.
 /// * `S` - the LED pixel shape
+/// * `Data` - (optional) data storage type. It shall be `Vec`-like struct.
 ///
 /// `flush()` operation shall be required to write changes from a framebuffer to the display.
-pub struct LedPixelDrawTarget<'d, CDraw, CDev, S>
+pub struct LedPixelDrawTarget<'d, CDraw, CDev, S, Data = LedPixelDrawTargetData>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
     S: LedPixelShape,
+    Data: DerefMut<Target = [u8]> + FromIterator<u8> + IntoIterator<Item = u8>,
 {
     driver: Ws2812Esp32RmtDriver<'d>,
-    data: Vec<u8>,
+    data: Data,
     brightness: u8,
     changed: bool,
-    _phantom: PhantomData<(CDraw, CDev, S)>,
+    _phantom: PhantomData<(CDraw, CDev, S, Data)>,
 }
 
-impl<'d, CDraw, CDev, S> LedPixelDrawTarget<'d, CDraw, CDev, S>
+impl<'d, CDraw, CDev, S, Data> LedPixelDrawTarget<'d, CDraw, CDev, S, Data>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
     S: LedPixelShape,
+    Data: DerefMut<Target = [u8]> + FromIterator<u8> + IntoIterator<Item = u8>,
 {
     /// Create a new draw target.
     ///
@@ -82,7 +96,7 @@ where
         let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
         let data = core::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)
-            .collect::<Vec<_>>();
+            .collect::<Data>();
         Ok(Self {
             driver,
             data,
@@ -98,7 +112,7 @@ where
         let driver = Ws2812Esp32RmtDriver::<'d>::new()?;
         let data = core::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)
-            .collect::<Vec<_>>();
+            .collect::<Data>();
         Ok(Self {
             driver,
             data,
@@ -140,11 +154,12 @@ where
     }
 }
 
-impl<'d, CDraw, CDev, S> OriginDimensions for LedPixelDrawTarget<'d, CDraw, CDev, S>
+impl<'d, CDraw, CDev, S, Data> OriginDimensions for LedPixelDrawTarget<'d, CDraw, CDev, S, Data>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
     S: LedPixelShape,
+    Data: DerefMut<Target = [u8]> + FromIterator<u8> + IntoIterator<Item = u8>,
 {
     #[inline]
     fn size(&self) -> Size {
@@ -152,11 +167,12 @@ where
     }
 }
 
-impl<'d, CDraw, CDev, S> DrawTarget for LedPixelDrawTarget<'d, CDraw, CDev, S>
+impl<'d, CDraw, CDev, S, Data> DrawTarget for LedPixelDrawTarget<'d, CDraw, CDev, S, Data>
 where
     CDraw: RgbColor,
     CDev: LedPixelColor + From<CDraw>,
     S: LedPixelShape,
+    Data: DerefMut<Target = [u8]> + FromIterator<u8> + IntoIterator<Item = u8>,
 {
     type Color = CDraw;
     type Error = Ws2812Esp32RmtDriverError;
@@ -204,7 +220,8 @@ impl<
 /// LED pixel shape of `L`-led strip
 pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
 /// 24bit GRB LED (Typical RGB LED (WS2812BsSK6812)) draw target
-pub type Ws2812DrawTarget<'d, S> = LedPixelDrawTarget<'d, Rgb888, LedPixelColorGrb24, S>;
+pub type Ws2812DrawTarget<'d, S, Data = LedPixelDrawTargetData> =
+    LedPixelDrawTarget<'d, Rgb888, LedPixelColorGrb24, S, Data>;
 
 #[cfg(test)]
 mod test {
