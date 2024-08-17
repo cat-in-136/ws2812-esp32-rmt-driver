@@ -288,9 +288,14 @@ mod test {
     fn test_ws2812draw_target_new_with_custom_data_struct() {
         const VEC_CAPACITY: usize = LedPixelMatrix::<10, 5>::PIXEL_LEN * LedPixelColorGrb24::BPP;
 
-        let draw =
-            Ws2812DrawTarget::<LedPixelMatrix<10, 5>, heapless::Vec<u8, VEC_CAPACITY>>::new()
-                .unwrap();
+        let peripherals = Peripherals::take().unwrap();
+        let led_pin = peripherals.pins.gpio0;
+        let channel = peripherals.rmt.channel0;
+
+        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>, heapless::Vec<u8, VEC_CAPACITY>>::new(
+            channel, led_pin,
+        )
+        .unwrap();
         assert_eq!(draw.changed, true);
         assert_eq!(
             draw.data,
