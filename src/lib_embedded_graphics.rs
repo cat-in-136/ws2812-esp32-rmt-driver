@@ -29,9 +29,21 @@ pub trait LedPixelShape {
 /// LED pixel shape of `W`x`H` matrix
 pub struct LedPixelMatrix<const W: usize, const H: usize> {}
 
+impl<const W: usize, const H: usize> LedPixelMatrix<W, H> {
+    /// Physical size of the LED pixel matrix.
+    const SIZE: Size = Size::new(W as u32, H as u32);
+    /// The number of pixels.
+    const PIXEL_LEN: usize = W * H;
+}
+
 impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
+    #[inline]
     fn size() -> Size {
-        Size::new(W as u32, H as u32)
+        Self::SIZE
+    }
+    #[inline]
+    fn pixel_len() -> usize {
+        Self::PIXEL_LEN
     }
 
     fn pixel_index(point: Point) -> Option<usize> {
@@ -64,6 +76,9 @@ type LedPixelDrawTargetData = heapless::Vec<u8, 256>;
 /// * `Data` - (optional) data storage type. It shall be `Vec`-like struct.
 ///
 /// `flush()` operation shall be required to write changes from a framebuffer to the display.
+///
+/// For non-`alloc` no_std environment, `Data` should be explicitly set to some `Vec`-like struct:
+/// e.g., `heapless::Vec<u8, PIXEL_LEN>` where `PIXEL_LEN` equals to `S::size() * CDev::BPP`.
 pub struct LedPixelDrawTarget<'d, CDraw, CDev, S, Data = LedPixelDrawTargetData>
 where
     CDraw: RgbColor,
@@ -229,6 +244,8 @@ mod test {
 
     #[test]
     fn test_led_pixel_matrix() {
+        assert_eq!(LedPixelMatrix::<10, 5>::PIXEL_LEN, 50);
+        assert_eq!(LedPixelMatrix::<10, 5>::SIZE, Size::new(10, 5));
         assert_eq!(LedPixelMatrix::<10, 5>::pixel_len(), 50);
         assert_eq!(LedPixelMatrix::<10, 5>::size(), Size::new(10, 5));
         assert_eq!(
@@ -256,6 +273,8 @@ mod test {
 
     #[test]
     fn test_led_pixel_strip() {
+        assert_eq!(LedPixelStrip::<10>::PIXEL_LEN, 10);
+        assert_eq!(LedPixelStrip::<10>::SIZE, Size::new(10, 1));
         assert_eq!(LedPixelStrip::<10>::pixel_len(), 10);
         assert_eq!(LedPixelStrip::<10>::size(), Size::new(10, 1));
         assert_eq!(LedPixelStrip::<10>::pixel_index(Point::new(0, 0)), Some(0));
@@ -273,6 +292,22 @@ mod test {
         assert_eq!(
             draw.data,
             core::iter::repeat(0).take(150).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn test_ws2812draw_target_new_with_custom_data_struct() {
+        const VEC_CAPACITY: usize = LedPixelMatrix::<10, 5>::PIXEL_LEN * LedPixelColorGrb24::BPP;
+
+        let draw =
+            Ws2812DrawTarget::<LedPixelMatrix<10, 5>, heapless::Vec<u8, VEC_CAPACITY>>::new()
+                .unwrap();
+        assert_eq!(draw.changed, true);
+        assert_eq!(
+            draw.data,
+            core::iter::repeat(0)
+                .take(150)
+                .collect::<heapless::Vec<_, VEC_CAPACITY>>()
         );
     }
 
