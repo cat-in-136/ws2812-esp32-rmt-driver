@@ -15,6 +15,9 @@ pub mod lib_embedded_graphics;
 #[cfg(feature = "smart-leds-trait")]
 pub mod lib_smart_leds;
 
+#[cfg(not(target_vendor = "espressif"))]
+pub mod mock;
+
 #[cfg(feature = "smart-leds-trait")]
 pub use lib_smart_leds::{LedPixelEsp32Rmt, Ws2812Esp32Rmt, RGBW8};
 #[cfg(feature = "smart-leds-trait")]

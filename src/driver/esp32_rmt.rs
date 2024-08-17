@@ -1,11 +1,33 @@
+#![cfg_attr(not(target_vendor = "espressif"), allow(dead_code))]
+
 use core::convert::From;
 use core::fmt;
 use core::time::Duration;
-use esp_idf_hal::gpio::OutputPin;
-use esp_idf_hal::peripheral::Peripheral;
-use esp_idf_hal::rmt::config::TransmitConfig;
-use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
-use esp_idf_hal::units::Hertz;
+
+#[cfg(not(target_vendor = "espressif"))]
+use core::marker::PhantomData;
+
+#[cfg(not(target_vendor = "espressif"))]
+use crate::mock::esp_idf_hal;
+use esp_idf_hal::{
+    gpio::OutputPin,
+    peripheral::Peripheral,
+    rmt::{config::TransmitConfig, RmtChannel, TxRmtDriver},
+};
+#[cfg(target_vendor = "espressif")]
+use esp_idf_hal::{
+    rmt::{PinState, Pulse, Symbol},
+    units::Hertz,
+};
+
+//use esp_idf_hal::gpio::OutputPin;
+//use esp_idf_hal::peripheral::Peripheral;
+//use esp_idf_hal::rmt::config::TransmitConfig;
+//use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
+//use esp_idf_hal::units::Hertz;
+
+#[cfg(not(target_vendor = "espressif"))]
+use crate::mock::esp_idf_sys;
 use esp_idf_sys::EspError;
 
 #[cfg(feature = "std")]
@@ -22,6 +44,7 @@ const WS2812_T1L_NS: Duration = Duration::from_nanos(450);
 
 /// Converter to a sequence of RMT items.
 #[repr(C)]
+#[cfg(target_vendor = "espressif")]
 struct Ws2812Esp32RmtItemEncoder {
     /// The RMT item that represents a 0 code.
     bit0: Symbol,
@@ -29,6 +52,7 @@ struct Ws2812Esp32RmtItemEncoder {
     bit1: Symbol,
 }
 
+#[cfg(target_vendor = "espressif")]
 impl Ws2812Esp32RmtItemEncoder {
     /// Creates a new encoder with the given clock frequency.
     ///
@@ -122,7 +146,18 @@ pub struct Ws2812Esp32RmtDriver<'d> {
     /// TxRMT driver.
     tx: TxRmtDriver<'d>,
     /// `u8`-to-`rmt_item32_t` Encoder
+    #[cfg(target_vendor = "espressif")]
     encoder: Ws2812Esp32RmtItemEncoder,
+
+    /// Pixel binary array to be written
+    ///
+    /// If the target vendor does not equals to "espressif", pixel data is written into this
+    /// instead of genuine encoder.
+    #[cfg(not(target_vendor = "espressif"))]
+    pub pixel_data: Option<Vec<u8>>,
+    /// Dummy phantom to take care of lifetime for `pixel_data`.
+    #[cfg(not(target_vendor = "espressif"))]
+    phantom: PhantomData<&'d Option<Vec<u8>>>,
 }
 
 impl<'d> Ws2812Esp32RmtDriver<'d> {
@@ -138,13 +173,26 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         channel: impl Peripheral<P = C> + 'd,
         pin: impl Peripheral<P = impl OutputPin> + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
-        let config = TransmitConfig::new().clock_divider(1);
-        let tx = TxRmtDriver::new(channel, pin, &config)?;
+        #[cfg(target_vendor = "espressif")]
+        {
+            let config = TransmitConfig::new().clock_divider(1);
+            let tx = TxRmtDriver::new(channel, pin, &config)?;
 
-        let clock_hz = tx.counter_clock()?;
-        let encoder = Ws2812Esp32RmtItemEncoder::new(clock_hz)?;
+            let clock_hz = tx.counter_clock()?;
+            let encoder = Ws2812Esp32RmtItemEncoder::new(clock_hz)?;
 
-        Ok(Self { tx, encoder })
+            Ok(Self { tx, encoder })
+        }
+        #[cfg(not(target_vendor = "espressif"))] // Mock implement
+        {
+            let config = TransmitConfig::new();
+            let tx = TxRmtDriver::new(channel, pin, &config)?;
+            Ok(Self {
+                tx,
+                pixel_data: None,
+                phantom: Default::default(),
+            })
+        }
     }
 
     /// Writes pixel data from a pixel-byte sequence to the IO pin.
@@ -169,8 +217,15 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         'b: 'a,
         T: Iterator<Item = u8> + Send + 'b,
     {
-        let signal = self.encoder.encode_iter(pixel_sequence);
-        self.tx.start_iter_blocking(signal)?;
+        #[cfg(target_vendor = "espressif")]
+        {
+            let signal = self.encoder.encode_iter(pixel_sequence);
+            self.tx.start_iter_blocking(signal)?;
+        }
+        #[cfg(not(target_vendor = "espressif"))]
+        {
+            self.pixel_data = Some(pixel_sequence.collect());
+        }
         Ok(())
     }
 
@@ -198,8 +253,15 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     where
         T: Iterator<Item = u8> + Send + 'static,
     {
-        let signal = self.encoder.encode_iter(pixel_sequence);
-        self.tx.start_iter(signal)?;
+        #[cfg(target_vendor = "espressif")]
+        {
+            let signal = self.encoder.encode_iter(pixel_sequence);
+            self.tx.start_iter(signal)?;
+        }
+        #[cfg(not(target_vendor = "espressif"))]
+        {
+            self.pixel_data = Some(pixel_sequence.collect());
+        }
         Ok(())
     }
 }
