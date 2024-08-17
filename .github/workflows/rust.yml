@@ -17,10 +17,10 @@ jobs:
         default: true
         version: "1.80.0"
         ldproxy: true
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         path: ws2812-esp32-rmt-driver
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
@@ -33,6 +33,8 @@ jobs:
         cargo build --all-features
         cargo build --no-default-features --features=alloc
         cargo build --no-default-features --features=alloc,smart-leds-trait,embedded-graphics-core
+        cargo build --no-default-features
+        cargo build --no-default-features --features=smart-leds-trait,embedded-graphics-core
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Build examples
       run: cargo build --examples --all-features
