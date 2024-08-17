@@ -4,7 +4,6 @@
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 extern crate alloc;
-extern crate heapless;
 
 pub mod driver;
 
