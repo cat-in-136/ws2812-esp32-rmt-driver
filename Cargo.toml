@@ -20,6 +20,9 @@ heapless = "0.8"
 esp-idf-hal = { version = "0.44", default-features = false }
 esp-idf-sys = { version = "0.35", default-features = false }
 
+[target.'cfg(not(target_vendor = "espressif"))'.dependencies]
+paste = "1"
+
 [features]
 default = ["std"]
 std = [ "alloc", "esp-idf-hal/std", "esp-idf-sys/std" ]

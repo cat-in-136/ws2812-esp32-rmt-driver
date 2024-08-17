@@ -9,7 +9,8 @@ use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
 use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
 
-#[cfg(target_vendor = "espressif")]
+#[cfg(not(target_vendor = "espressif"))]
+use crate::mock::esp_idf_hal;
 use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};
 
 /// LED pixel shape
@@ -103,28 +104,11 @@ where
     /// Create a new draw target.
     ///
     /// `channel` shall be different between different `pin`.
-    #[cfg(target_vendor = "espressif")]
     pub fn new<C: RmtChannel>(
         channel: impl Peripheral<P = C> + 'd,
         pin: impl Peripheral<P = impl OutputPin> + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
-        let data = core::iter::repeat(0)
-            .take(S::pixel_len() * CDev::BPP)
-            .collect::<Data>();
-        Ok(Self {
-            driver,
-            data,
-            brightness: u8::MAX,
-            changed: true,
-            _phantom: Default::default(),
-        })
-    }
-
-    /// Create a new draw target with dummy driver.
-    #[cfg(not(target_vendor = "espressif"))]
-    pub fn new() -> Result<Self, Ws2812Esp32RmtDriverError> {
-        let driver = Ws2812Esp32RmtDriver::<'d>::new()?;
         let data = core::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)
             .collect::<Data>();
@@ -241,6 +225,7 @@ pub type Ws2812DrawTarget<'d, S, Data = LedPixelDrawTargetData> =
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::mock::esp_idf_hal::peripherals::Peripherals;
 
     #[test]
     fn test_led_pixel_matrix() {
@@ -287,7 +272,11 @@ mod test {
 
     #[test]
     fn test_ws2812draw_target_new() {
-        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new().unwrap();
+        let peripherals = Peripherals::take().unwrap();
+        let led_pin = peripherals.pins.gpio0;
+        let channel = peripherals.rmt.channel0;
+
+        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(channel, led_pin).unwrap();
         assert_eq!(draw.changed, true);
         assert_eq!(
             draw.data,
@@ -313,7 +302,11 @@ mod test {
 
     #[test]
     fn test_ws2812draw_target_draw() {
-        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new().unwrap();
+        let peripherals = Peripherals::take().unwrap();
+        let led_pin = peripherals.pins.gpio1;
+        let channel = peripherals.rmt.channel1;
+
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(channel, led_pin).unwrap();
 
         draw.draw_iter(
             [
@@ -350,7 +343,11 @@ mod test {
 
     #[test]
     fn test_ws2812draw_target_flush() {
-        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new().unwrap();
+        let peripherals = Peripherals::take().unwrap();
+        let led_pin = peripherals.pins.gpio2;
+        let channel = peripherals.rmt.channel2;
+
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(channel, led_pin).unwrap();
 
         draw.changed = true;
         draw.data.fill(0x01);
