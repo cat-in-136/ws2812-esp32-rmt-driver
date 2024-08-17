@@ -1,10 +1,15 @@
+use core::convert::From;
+use core::fmt;
+use core::time::Duration;
 use esp_idf_hal::gpio::OutputPin;
 use esp_idf_hal::peripheral::Peripheral;
 use esp_idf_hal::rmt::config::TransmitConfig;
 use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
 use esp_idf_hal::units::Hertz;
 use esp_idf_sys::EspError;
-use std::time::Duration;
+
+#[cfg(feature = "std")]
+use std::error::Error;
 
 /// T0H duration time (0 code, high voltage time)
 const WS2812_T0H_NS: Duration = Duration::from_nanos(400);
@@ -77,9 +82,40 @@ impl Ws2812Esp32RmtItemEncoder {
 }
 
 /// WS2812 ESP32 RMT Driver error.
-#[derive(thiserror::Error, Debug)]
-#[error(transparent)]
-pub struct Ws2812Esp32RmtDriverError(#[from] EspError);
+#[derive(Debug)]
+#[repr(transparent)]
+pub struct Ws2812Esp32RmtDriverError {
+    source: EspError,
+}
+
+#[cfg(not(feature = "std"))]
+impl Ws2812Esp32RmtDriverError {
+    /// The `EspError` source of this error, if any.
+    ///
+    /// This is a workaround function until `core::error::Error` added.
+    pub fn source(&self) -> Option<&EspError> {
+        Some(&self.source)
+    }
+}
+
+#[cfg(feature = "std")]
+impl Error for Ws2812Esp32RmtDriverError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(&self.source)
+    }
+}
+
+impl fmt::Display for Ws2812Esp32RmtDriverError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.source.fmt(f)
+    }
+}
+
+impl From<EspError> for Ws2812Esp32RmtDriverError {
+    fn from(source: EspError) -> Self {
+        Self { source }
+    }
+}
 
 /// WS2812 ESP32 RMT driver wrapper.
 pub struct Ws2812Esp32RmtDriver<'d> {
@@ -154,6 +190,7 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// Iteration of `pixel_sequence` happens inside an interrupt handler so beware of side-effects
     /// that don't work in interrupt handlers.
     /// See [esp_idf_hal::rmt::TxRmtDriver#start_iter()] for details.
+    #[cfg(feature = "alloc")]
     pub fn write<'b, T>(
         &'static mut self,
         pixel_sequence: T,
