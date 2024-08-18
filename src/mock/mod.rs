@@ -12,32 +12,24 @@ pub mod esp_idf_hal {
         /// Mock trait for `esp_idf_hal::gpio::OutputPin`.
         pub trait OutputPin {}
 
-        /// Mock struct for `esp_idf_hal::gpio::Pins`.
-        #[derive(Debug, Default)]
-        pub struct Pins {
-            pub gpio0: Gpio0,
-            pub gpio1: Gpio1,
-            pub gpio2: Gpio2,
-            pub gpio3: Gpio3,
-            pub gpio4: Gpio4,
-            pub gpio5: Gpio5,
-            pub gpio6: Gpio6,
-            pub gpio7: Gpio7,
-            pub gpio8: Gpio8,
-            pub gpio9: Gpio9,
-            pub gpio10: Gpio10,
-            pub gpio11: Gpio11,
-            pub gpio12: Gpio12,
-            pub gpio13: Gpio13,
-            pub gpio14: Gpio14,
-            pub gpio15: Gpio15,
-            pub gpio16: Gpio16,
-            pub gpio17: Gpio17,
-            pub gpio18: Gpio18,
-            pub gpio19: Gpio19,
-            pub gpio20: Gpio20,
-            pub gpio21: Gpio21,
+        macro_rules! define_pins_struct {
+            ($($num:expr),*) => {
+                paste! {
+                    /// Mock struct for `esp_idf_hal::gpio::Pins`.
+                    #[derive(Debug, Default)]
+                    pub struct Pins {
+                        $(
+                            pub [<gpio $num>]: [<Gpio $num>],
+                        )*
+                    }
+                }
+            }
         }
+        define_pins_struct!(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+            24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
+            46, 47, 48
+        );
 
         impl Pins {
             pub(super) fn new() -> Self {
@@ -68,7 +60,9 @@ pub mod esp_idf_hal {
             };
         }
         define_gpio_structs!(
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+            24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
+            46, 47, 48
         );
     }
 
