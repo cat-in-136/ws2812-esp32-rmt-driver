@@ -32,9 +32,9 @@ pub struct LedPixelMatrix<const W: usize, const H: usize> {}
 
 impl<const W: usize, const H: usize> LedPixelMatrix<W, H> {
     /// Physical size of the LED pixel matrix.
-    const SIZE: Size = Size::new(W as u32, H as u32);
+    pub const SIZE: Size = Size::new(W as u32, H as u32);
     /// The number of pixels.
-    const PIXEL_LEN: usize = W * H;
+    pub const PIXEL_LEN: usize = W * H;
 }
 
 impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
