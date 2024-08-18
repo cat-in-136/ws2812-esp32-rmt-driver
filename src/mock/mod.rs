@@ -49,6 +49,7 @@ pub mod esp_idf_hal {
             ($($num:expr),*) => {
                 paste! {
                     $(
+                        #[doc = concat!("Mock struct for `esp_idf_hal::gpio::Gpio", stringify!($num) ,"`")]
                         #[derive(Debug, Default)]
                         pub struct [<Gpio $num>] {}
 
@@ -73,7 +74,9 @@ pub mod esp_idf_hal {
 
     /// Mock module for `esp_idf_hal::peripheral`
     pub mod peripheral {
+        /// Mock trait for `esp_idf_hal::peripheral::Peripheral`
         pub trait Peripheral: Sized {
+            /// Peripheral singleton type
             type P;
         }
     }
@@ -94,6 +97,11 @@ pub mod esp_idf_hal {
                 Ok(Self::new())
             }
 
+            // Create `Peripherals` instance.
+            //
+            // This function shall not used usually because
+            // the original `esp_idf_hal::peripherals::Peripherals::new()` is unsafe,
+            // and `take()` should be used instead.
             pub fn new() -> Self {
                 Self {
                     pins: gpio::Pins::new(),
@@ -116,6 +124,7 @@ pub mod esp_idf_hal {
             ($($num:expr),*) => {
                 paste! {
                     $(
+                        #[doc = concat!("Mock struct for `esp_idf_hal::rmt::CHANNEL", stringify!($num) ,"`")]
                         #[derive(Debug, Default)]
                         pub struct [<CHANNEL $num>] {}
 
@@ -136,7 +145,7 @@ pub mod esp_idf_hal {
         }
         define_channel_structs!(0, 1, 2, 3, 4, 5, 6, 7);
 
-        // mock struct for `esp_idf_hal::rmt::RMT`
+        /// mock struct for `esp_idf_hal::rmt::RMT`
         #[derive(Debug, Default)]
         pub struct RMT {
             pub channel0: CHANNEL0,
@@ -200,7 +209,7 @@ pub mod esp_idf_hal {
 pub mod esp_idf_sys {
     use core::fmt;
 
-    /// Mock struct for (`esp_idf_sys::EspError`)
+    /// Mock struct for `esp_idf_sys::EspError`
     #[repr(transparent)]
     #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
     pub struct EspError();
