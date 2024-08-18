@@ -71,15 +71,20 @@ type LedPixelDrawTargetData = heapless::Vec<u8, 256>;
 
 /// Target for embedded-graphics drawing operations of the LED pixels.
 ///
+/// This is a generalization for the future extension.
+/// Use [`Ws2812DrawTarget`] for typical RGB LED (WS2812B/SK6812) consisting of 8-bit GRB (total 24-bit pixel).
+///
 /// * `CDraw` - color type for embedded-graphics drawing operations
 /// * `CDev` - the LED pixel color type (device dependant). It shall be convertible from `CDraw`.
 /// * `S` - the LED pixel shape
 /// * `Data` - (optional) data storage type. It shall be `Vec`-like struct.
 ///
-/// `flush()` operation shall be required to write changes from a framebuffer to the display.
+/// [`flush()`] operation shall be required to write changes from a framebuffer to the display.
 ///
 /// For non-`alloc` no_std environment, `Data` should be explicitly set to some `Vec`-like struct:
 /// e.g., `heapless::Vec<u8, PIXEL_LEN>` where `PIXEL_LEN` equals to `S::size() * CDev::BPP`.
+///
+/// [`flush()`]: #method.flush
 pub struct LedPixelDrawTarget<'d, CDraw, CDev, S, Data = LedPixelDrawTargetData>
 where
     CDraw: RgbColor,
@@ -218,7 +223,44 @@ impl<
 
 /// LED pixel shape of `L`-led strip
 pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
-/// 24bit GRB LED (Typical RGB LED (WS2812BsSK6812)) draw target
+
+/// 8-bit GRB (total 24-bit pixel) LED draw target, Typical RGB LED (WS2812B/SK6812) draw target
+///
+/// * `S` - the LED pixel shape
+/// * `Data` - (optional) data storage type. It shall be `Vec`-like struct.
+///
+/// [`flush()`] operation shall be required to write changes from a framebuffer to the display.
+///
+/// For non-`alloc` no_std environment, `Data` should be explicitly set to some `Vec`-like struct:
+/// e.g., `heapless::Vec<u8, PIXEL_LEN>` where `PIXEL_LEN` equals to `S::size() * LedPixelColorGrb24::BPP`.
+///
+/// [`flush()`]: #method.flush
+///
+/// # Examples
+///
+/// ```
+/// #[cfg(not(target_vendor = "espressif"))]
+/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+///
+/// use embedded_graphics::pixelcolor::Rgb888;
+/// use embedded_graphics::prelude::*;
+/// use embedded_graphics::primitives::{Circle, PrimitiveStyle};
+/// use esp_idf_hal::peripherals::Peripherals;
+/// use ws2812_esp32_rmt_driver::lib_embedded_graphics::{LedPixelMatrix, Ws2812DrawTarget};
+///
+/// let peripherals = Peripherals::take().unwrap();
+/// let led_pin = peripherals.pins.gpio27;
+/// let channel = peripherals.rmt.channel0;
+/// let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(channel, led_pin).unwrap();
+/// draw.set_brightness(40);
+/// draw.clear_with_black().unwrap();
+/// let mut translated_draw = draw.translated(Point::new(0, 0));
+/// Circle::new(Point::new(0, 0), 5)
+///     .into_styled(PrimitiveStyle::with_fill(Rgb888::RED))
+///     .draw(&mut translated_draw)
+///     .unwrap();
+/// draw.flush().unwrap();
+/// ```
 pub type Ws2812DrawTarget<'d, S, Data = LedPixelDrawTargetData> =
     LedPixelDrawTarget<'d, Rgb888, LedPixelColorGrb24, S, Data>;
 

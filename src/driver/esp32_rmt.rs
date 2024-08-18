@@ -20,12 +20,6 @@ use esp_idf_hal::{
     units::Hertz,
 };
 
-//use esp_idf_hal::gpio::OutputPin;
-//use esp_idf_hal::peripheral::Peripheral;
-//use esp_idf_hal::rmt::config::TransmitConfig;
-//use esp_idf_hal::rmt::{PinState, Pulse, RmtChannel, Symbol, TxRmtDriver};
-//use esp_idf_hal::units::Hertz;
-
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_sys;
 use esp_idf_sys::EspError;
@@ -142,6 +136,29 @@ impl From<EspError> for Ws2812Esp32RmtDriverError {
 }
 
 /// WS2812 ESP32 RMT driver wrapper.
+///
+/// # Examples
+///
+/// ```
+/// #[cfg(not(target_vendor = "espressif"))]
+/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+///
+/// use esp_idf_hal::peripherals::Peripherals;
+/// use ws2812_esp32_rmt_driver::driver::Ws2812Esp32RmtDriver;
+/// use ws2812_esp32_rmt_driver::driver::color::{LedPixelColor, LedPixelColorGrb24};
+///
+/// let peripherals = Peripherals::take().unwrap();
+/// let led_pin = peripherals.pins.gpio27;
+/// let channel = peripherals.rmt.channel0;
+/// let mut driver = Ws2812Esp32RmtDriver::new(channel, led_pin).unwrap();
+///
+/// // Single LED with RED color.
+/// let red = LedPixelColorGrb24::new_with_rgb(30, 0, 0);
+/// let pixel: [u8; 3] = red.as_ref().try_into().unwrap();
+/// assert_eq!(pixel, [0, 30, 0]);
+///
+/// driver.write_blocking(pixel.clone().into_iter()).unwrap();
+/// ```
 pub struct Ws2812Esp32RmtDriver<'d> {
     /// TxRMT driver.
     tx: TxRmtDriver<'d>,

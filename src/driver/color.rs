@@ -43,6 +43,8 @@ pub trait LedPixelColor:
 /// # Examples
 ///
 /// ```
+/// use ws2812_esp32_rmt_driver::driver::color::{LedPixelColorImpl, LedPixelColor};
+///
 /// let color = LedPixelColorImpl::<3, 1, 0, 2, 255>::new_with_rgb(1, 2, 3);
 /// assert_eq!(color.as_ref(), [2, 1, 3]);
 /// assert_eq!((color.r(), color.g(), color.b(), color.w()), (1, 2, 3, 0));
@@ -184,9 +186,38 @@ fn test_led_pixel_color_brightness() {
     );
 }
 
-/// 24bit GRB LED pixel color (Typical RGB LED (WS2812B/SK6812) pixel color)
+/// 8-bit GRB LED pixel color (total 32-bit pixel), Typical RGB LED (WS2812B/SK6812) pixel color
+///
+/// # Examples
+///
+/// ```
+/// use ws2812_esp32_rmt_driver::driver::color::{LedPixelColorGrb24, LedPixelColor};
+///
+/// let color = LedPixelColorGrb24::new_with_rgb(1, 2, 3);
+/// assert_eq!(color.as_ref(), [2, 1, 3]);
+/// ```
 pub type LedPixelColorGrb24 = LedPixelColorImpl<3, 1, 0, 2, 255>;
-/// 32bit RGBW LED pixel color
+
+/// 8-bit RGBW LED pixel color (total 32-bit pixel)
+///
+/// # Examples
+///
+/// ```
+/// use ws2812_esp32_rmt_driver::driver::color::{LedPixelColorRgbw32, LedPixelColor};
+///
+/// let color = LedPixelColorRgbw32::new_with_rgbw(1, 2, 3, 4);
+/// assert_eq!(color.as_ref(), [1, 2, 3, 4]);
+/// ```
 pub type LedPixelColorRgbw32 = LedPixelColorImpl<4, 0, 1, 2, 3>;
-/// 32bit GRBW LED pixel color
+
+/// 8-bit GRBW LED pixel color (total 32-bit pixel)
+///
+/// # Examples
+///
+/// ```
+/// use ws2812_esp32_rmt_driver::driver::color::{LedPixelColorGrbw32, LedPixelColor};
+///
+/// let color = LedPixelColorGrbw32::new_with_rgbw(1, 2, 3, 4);
+/// assert_eq!(color.as_ref(), [2, 1, 3, 4]);
+/// ```
 pub type LedPixelColorGrbw32 = LedPixelColorImpl<4, 1, 0, 2, 3>;

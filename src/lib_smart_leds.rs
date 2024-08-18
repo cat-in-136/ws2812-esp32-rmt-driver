@@ -43,6 +43,29 @@ impl<
 }
 
 /// ws2812-like smart led driver wrapper providing smart-leds API
+///
+/// This is a generalization to handle variants such as SK6812-RGBW 4-color LED.
+/// Use [`Ws2812Esp32Rmt`] for typical RGB LED (WS2812B/SK6812) consisting of 8-bit GRB (total 24-bit pixel).
+///
+/// # Examples
+///
+/// ```
+/// #[cfg(not(target_vendor = "espressif"))]
+/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+///
+/// use esp_idf_hal::peripherals::Peripherals;
+/// use smart_leds::{SmartLedsWrite, White};
+/// use ws2812_esp32_rmt_driver::{LedPixelEsp32Rmt, RGBW8};
+/// use ws2812_esp32_rmt_driver::driver::color::LedPixelColorGrbw32;
+///
+/// let peripherals = Peripherals::take().unwrap();
+/// let led_pin = peripherals.pins.gpio26;
+/// let channel = peripherals.rmt.channel0;
+/// let mut ws2812 = LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(channel, led_pin).unwrap();
+///
+/// let pixels = std::iter::repeat(RGBW8 {r: 0, g: 0, b: 0, a: White(30)}).take(25);
+/// ws2812.write(pixels).unwrap();
+/// ```
 pub struct LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
@@ -130,7 +153,27 @@ where
     }
 }
 
-/// ws2812 driver wrapper providing smart-leds API
+/// 8-bit GRB (total 24-bit pixel) LED driver wrapper providing smart-leds API,
+/// Typical RGB LED (WS2812B/SK6812) driver wrapper providing smart-leds API
+///
+/// # Examples
+///
+/// ```
+/// #[cfg(not(target_vendor = "espressif"))]
+/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+///
+/// use esp_idf_hal::peripherals::Peripherals;
+/// use smart_leds::{RGB8, SmartLedsWrite};
+/// use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
+///
+/// let peripherals = Peripherals::take().unwrap();
+/// let led_pin = peripherals.pins.gpio27;
+/// let channel = peripherals.rmt.channel0;
+/// let mut ws2812 = Ws2812Esp32Rmt::new(channel, led_pin).unwrap();
+///
+/// let pixels = std::iter::repeat(RGB8::new(30, 0, 0)).take(25);
+/// ws2812.write(pixels).unwrap();
+/// ```
 pub type Ws2812Esp32Rmt<'d> = LedPixelEsp32Rmt<'d, RGB8, LedPixelColorGrb24>;
 
 #[cfg(test)]

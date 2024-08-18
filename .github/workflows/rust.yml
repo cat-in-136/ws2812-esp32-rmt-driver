@@ -45,6 +45,7 @@ jobs:
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --all-features
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features std,smart-leds-trait
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features std,embedded-graphics-core
+        cargo +stable test --target x86_64-unknown-linux-gnu --doc --all-features
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Publish (Dry run)
       run: cargo +stable publish --target x86_64-unknown-linux-gnu --dry-run
