@@ -37,7 +37,7 @@ jobs:
         cargo build --no-default-features --features=smart-leds-trait,embedded-graphics-core
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Build examples
-      run: cargo build --examples --all-features
+      run: cargo build --examples --all-features --features=esp-idf-sys/binstart #--release
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Test
       run: |
