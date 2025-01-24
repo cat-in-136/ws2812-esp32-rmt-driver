@@ -17,8 +17,8 @@ embedded-graphics-core = { version = "0.4", optional = true }
 heapless = "0.8"
 
 [target.'cfg(target_vendor = "espressif")'.dependencies]
-esp-idf-hal = { version = "0.44", default-features = false }
-esp-idf-sys = { version = "0.35", default-features = false }
+esp-idf-hal = { version = "0.45", default-features = false, features = ['rmt-legacy'] }
+esp-idf-sys = { version = "0.36", default-features = false }
 
 [target.'cfg(not(target_vendor = "espressif"))'.dependencies]
 paste = "1"
