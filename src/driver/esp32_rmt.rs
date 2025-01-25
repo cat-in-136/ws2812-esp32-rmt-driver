@@ -3,6 +3,7 @@
 use core::convert::From;
 use core::fmt;
 use core::time::Duration;
+use core::error::Error;
 
 #[cfg(not(target_vendor = "espressif"))]
 use core::marker::PhantomData;
@@ -23,9 +24,6 @@ use esp_idf_hal::{
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_sys;
 use esp_idf_sys::EspError;
-
-#[cfg(feature = "std")]
-use std::error::Error;
 
 /// T0H duration time (0 code, high voltage time)
 const WS2812_T0H_NS: Duration = Duration::from_nanos(400);
@@ -106,17 +104,6 @@ pub struct Ws2812Esp32RmtDriverError {
     source: EspError,
 }
 
-#[cfg(not(feature = "std"))]
-impl Ws2812Esp32RmtDriverError {
-    /// The `EspError` source of this error, if any.
-    ///
-    /// This is a workaround function until `core::error::Error` added.
-    pub fn source(&self) -> Option<&EspError> {
-        Some(&self.source)
-    }
-}
-
-#[cfg(feature = "std")]
 impl Error for Ws2812Esp32RmtDriverError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.source)
