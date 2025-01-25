@@ -15,7 +15,7 @@ jobs:
       uses: esp-rs/xtensa-toolchain@v1.5
       with:
         default: true
-        version: "1.80.0"
+        version: "1.82.0"
         ldproxy: true
     - uses: actions/checkout@v4
       with:

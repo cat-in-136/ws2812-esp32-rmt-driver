@@ -10,6 +10,7 @@ homepage = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
 readme = "README.md"
 repository = "https://github.com/cat-in-136/ws2812-esp32-rmt-smart-leds"
 edition = "2021"
+rust-version = "1.82"
 
 [dependencies]
 smart-leds-trait = { version = "0.3", optional = true }
