@@ -1,9 +1,9 @@
 #![cfg_attr(not(target_vendor = "espressif"), allow(dead_code))]
 
 use core::convert::From;
+use core::error::Error;
 use core::fmt;
 use core::time::Duration;
-use core::error::Error;
 
 #[cfg(not(target_vendor = "espressif"))]
 use core::marker::PhantomData;
@@ -104,7 +104,23 @@ pub struct Ws2812Esp32RmtDriverError {
     source: EspError,
 }
 
+#[cfg(not(feature = "std"))]
+impl Ws2812Esp32RmtDriverError {
+    /// The `EspError` source of this error, if any.
+    ///
+    /// This is a workaround function until `core::error::Error` added to `esp_sys::EspError`.
+    pub fn source(&self) -> Option<&EspError> {
+        Some(&self.source)
+    }
+}
+
 impl Error for Ws2812Esp32RmtDriverError {
+    #[cfg(not(feature = "std"))]
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+
+    #[cfg(feature = "std")]
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.source)
     }
