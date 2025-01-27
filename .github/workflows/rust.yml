@@ -15,7 +15,7 @@ jobs:
       uses: esp-rs/xtensa-toolchain@v1.5
       with:
         default: true
-        version: "1.80.0"
+        version: "1.82.0"
         ldproxy: true
     - uses: actions/checkout@v4
       with:
@@ -37,7 +37,7 @@ jobs:
         cargo build --no-default-features --features=smart-leds-trait,embedded-graphics-core
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Build examples
-      run: cargo build --examples --all-features
+      run: cargo build --examples --all-features --features=esp-idf-sys/binstart #--release
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Test
       run: |
