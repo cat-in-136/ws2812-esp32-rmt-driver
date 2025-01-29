@@ -115,14 +115,15 @@ impl Ws2812Esp32RmtDriverError {
 }
 
 impl Error for Ws2812Esp32RmtDriverError {
-    #[cfg(not(feature = "std"))]
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
-
-    #[cfg(feature = "std")]
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.source)
+        #[cfg(feature = "std")]
+        {
+            Some(&self.source)
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            None
+        }
     }
 }
 
