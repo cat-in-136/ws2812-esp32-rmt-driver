@@ -28,7 +28,6 @@ use esp_idf_sys::EspError;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
-
 /// T0H duration time (0 code, high voltage time)
 const WS2812_T0H_NS: Duration = Duration::from_nanos(400);
 /// T0L duration time (0 code, low voltage time)
