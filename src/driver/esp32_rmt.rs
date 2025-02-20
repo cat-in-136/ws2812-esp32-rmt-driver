@@ -195,6 +195,23 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
             let config = TransmitConfig::new().clock_divider(1);
             let tx = TxRmtDriver::new(channel, pin, &config)?;
 
+            Self::new_with_rmt_driver(tx)
+        }
+        #[cfg(not(target_vendor = "espressif"))] // Mock implement
+        {
+            let config = TransmitConfig::new();
+            let tx = TxRmtDriver::new(channel, pin, &config)?;
+            Ok(Self {
+                tx,
+                pixel_data: None,
+                phantom: Default::default(),
+            })
+        }
+    }
+
+    pub fn new_with_rmt_driver(tx: TxRmtDriver<'d>) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        #[cfg(target_vendor = "espressif")]
+        {
             let clock_hz = tx.counter_clock()?;
             let encoder = Ws2812Esp32RmtItemEncoder::new(clock_hz)?;
 
@@ -202,8 +219,6 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         }
         #[cfg(not(target_vendor = "espressif"))] // Mock implement
         {
-            let config = TransmitConfig::new();
-            let tx = TxRmtDriver::new(channel, pin, &config)?;
             Ok(Self {
                 tx,
                 pixel_data: None,
