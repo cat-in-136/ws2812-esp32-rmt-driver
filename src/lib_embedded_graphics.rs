@@ -8,6 +8,7 @@ use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
 use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
+use esp_idf_hal::rmt::TxRmtDriver;
 
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
@@ -114,6 +115,23 @@ where
         pin: impl Peripheral<P = impl OutputPin> + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
+        let data = core::iter::repeat(0)
+            .take(S::pixel_len() * CDev::BPP)
+            .collect::<Data>();
+        Ok(Self {
+            driver,
+            data,
+            brightness: u8::MAX,
+            changed: true,
+            _phantom: Default::default(),
+        })
+    }
+
+    /// Create a new draw target.
+    pub fn new_with_rmt_driver(
+        tx: TxRmtDriver<'d>,
+    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        let driver = Ws2812Esp32RmtDriver::<'d>::new_with_rmt_driver(tx)?;
         let data = core::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)
             .collect::<Data>();
