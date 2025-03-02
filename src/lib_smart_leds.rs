@@ -94,7 +94,7 @@ where
     }
 
     /// Create a new driver wrapper.
-    pub fn new_with_rmt_driver<C: RmtChannel>(
+    pub fn new_with_rmt_driver(
         tx: TxRmtDriver<'d>,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new_with_rmt_driver(tx)?;
