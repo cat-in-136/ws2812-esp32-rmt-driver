@@ -4,6 +4,7 @@ use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl}
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::vec::Vec;
+use esp_idf_hal::rmt::TxRmtDriver;
 use core::marker::PhantomData;
 #[cfg(feature = "alloc")]
 use smart_leds_trait::SmartLedsWrite;
@@ -86,6 +87,17 @@ where
         pin: impl Peripheral<P = impl OutputPin> + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
+        Ok(Self {
+            driver,
+            phantom: Default::default(),
+        })
+    }
+
+    /// Create a new driver wrapper.
+    pub fn new_with_rmt_driver(
+        tx: TxRmtDriver<'d>,
+    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        let driver = Ws2812Esp32RmtDriver::<'d>::new_with_rmt_driver(tx)?;
         Ok(Self {
             driver,
             phantom: Default::default(),
