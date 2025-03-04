@@ -127,10 +127,27 @@ where
         })
     }
 
-    /// Create a new draw target.
-    pub fn new_with_rmt_driver(
-        tx: TxRmtDriver<'d>,
-    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+    /// Create a new draw target with `TxRmtDriver`.
+    ///
+    /// The clock divider must be set to 1 for the `driver` configuration.
+    ///
+    /// ```
+    /// # #[cfg(not(target_vendor = "espressif"))]
+    /// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+    /// #
+    /// # use esp_idf_hal::peripherals::Peripherals;
+    /// # use esp_idf_hal::rmt::config::TransmitConfig;
+    /// # use esp_idf_hal::rmt::TxRmtDriver;
+    /// #
+    /// # let peripherals = Peripherals::take().unwrap();
+    /// # let led_pin = peripherals.pins.gpio27;
+    /// # let channel = peripherals.rmt.channel0;
+    /// #
+    /// let driver_config = TransmitConfig::new()
+    ///     .clock_divider(1); // Required parameter.
+    /// let driver = TxRmtDriver::new(channel, led_pin, &driver_config).unwrap();
+    /// ```
+    pub fn new_with_rmt_driver(tx: TxRmtDriver<'d>) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new_with_rmt_driver(tx)?;
         let data = core::iter::repeat(0)
             .take(S::pixel_len() * CDev::BPP)

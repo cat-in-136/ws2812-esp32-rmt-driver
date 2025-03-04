@@ -184,14 +184,27 @@ pub mod esp_idf_hal {
         pub mod config {
             /// Mock struct for `esp_idf_hal::rmt::config::TransmitConfig`
             #[derive(Debug, Clone)]
-            pub struct TransmitConfig {}
+            pub struct TransmitConfig {
+                pub clock_divider: u8,
+                pub mem_block_num: u8,
+                // Other parameters are omitted
+            }
 
             impl TransmitConfig {
                 pub fn new() -> Self {
-                    Self {}
+                    Self {
+                        mem_block_num: 1,
+                        clock_divider: 80,
+                    }
                 }
-                #[allow(unused_mut)]
-                pub fn clock_divider(mut self, _divider: u8) -> Self {
+                #[must_use]
+                pub fn clock_divider(mut self, divider: u8) -> Self {
+                    self.clock_divider = divider;
+                    self
+                }
+                #[must_use]
+                pub fn mem_block_num(mut self, mem_block_num: u8) -> Self {
+                    self.mem_block_num = mem_block_num;
                     self
                 }
             }
