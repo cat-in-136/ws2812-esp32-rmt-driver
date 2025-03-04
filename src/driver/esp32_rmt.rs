@@ -144,9 +144,9 @@ impl From<EspError> for Ws2812Esp32RmtDriverError {
 /// # Examples
 ///
 /// ```
-/// #[cfg(not(target_vendor = "espressif"))]
-/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-///
+/// # #[cfg(not(target_vendor = "espressif"))]
+/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+/// #
 /// use esp_idf_hal::peripherals::Peripherals;
 /// use ws2812_esp32_rmt_driver::driver::Ws2812Esp32RmtDriver;
 /// use ws2812_esp32_rmt_driver::driver::color::{LedPixelColor, LedPixelColorGrb24};

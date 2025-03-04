@@ -51,9 +51,9 @@ impl<
 /// # Examples
 ///
 /// ```
-/// #[cfg(not(target_vendor = "espressif"))]
-/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-///
+/// # #[cfg(not(target_vendor = "espressif"))]
+/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+/// #
 /// use esp_idf_hal::peripherals::Peripherals;
 /// use smart_leds::{SmartLedsWrite, White};
 /// use ws2812_esp32_rmt_driver::{LedPixelEsp32Rmt, RGBW8};
@@ -188,9 +188,9 @@ where
 /// # Examples
 ///
 /// ```
-/// #[cfg(not(target_vendor = "espressif"))]
-/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-///
+/// # #[cfg(not(target_vendor = "espressif"))]
+/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+/// #
 /// use esp_idf_hal::peripherals::Peripherals;
 /// use smart_leds::{RGB8, SmartLedsWrite};
 /// use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
