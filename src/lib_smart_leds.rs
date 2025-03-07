@@ -4,8 +4,8 @@ use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl}
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::vec::Vec;
-use esp_idf_hal::rmt::TxRmtDriver;
 use core::marker::PhantomData;
+use esp_idf_hal::rmt::TxRmtDriver;
 #[cfg(feature = "alloc")]
 use smart_leds_trait::SmartLedsWrite;
 use smart_leds_trait::{RGB8, RGBW};
@@ -51,9 +51,9 @@ impl<
 /// # Examples
 ///
 /// ```
-/// #[cfg(not(target_vendor = "espressif"))]
-/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-///
+/// # #[cfg(not(target_vendor = "espressif"))]
+/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+/// #
 /// use esp_idf_hal::peripherals::Peripherals;
 /// use smart_leds::{SmartLedsWrite, White};
 /// use ws2812_esp32_rmt_driver::{LedPixelEsp32Rmt, RGBW8};
@@ -93,10 +93,27 @@ where
         })
     }
 
-    /// Create a new driver wrapper.
-    pub fn new_with_rmt_driver(
-        tx: TxRmtDriver<'d>,
-    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+    /// Create a new driver wrapper with `TxRmtDriver`.
+    ///
+    /// The clock divider must be set to 1 for the `driver` configuration.
+    ///
+    /// ```
+    /// # #[cfg(not(target_vendor = "espressif"))]
+    /// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+    /// #
+    /// # use esp_idf_hal::peripherals::Peripherals;
+    /// # use esp_idf_hal::rmt::config::TransmitConfig;
+    /// # use esp_idf_hal::rmt::TxRmtDriver;
+    /// #
+    /// # let peripherals = Peripherals::take().unwrap();
+    /// # let led_pin = peripherals.pins.gpio27;
+    /// # let channel = peripherals.rmt.channel0;
+    /// #
+    /// let driver_config = TransmitConfig::new()
+    ///     .clock_divider(1); // Required parameter.
+    /// let driver = TxRmtDriver::new(channel, led_pin, &driver_config).unwrap();
+    /// ```
+    pub fn new_with_rmt_driver(tx: TxRmtDriver<'d>) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new_with_rmt_driver(tx)?;
         Ok(Self {
             driver,
@@ -171,9 +188,9 @@ where
 /// # Examples
 ///
 /// ```
-/// #[cfg(not(target_vendor = "espressif"))]
-/// use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-///
+/// # #[cfg(not(target_vendor = "espressif"))]
+/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+/// #
 /// use esp_idf_hal::peripherals::Peripherals;
 /// use smart_leds::{RGB8, SmartLedsWrite};
 /// use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
@@ -185,6 +202,40 @@ where
 ///
 /// let pixels = std::iter::repeat(RGB8::new(30, 0, 0)).take(25);
 /// ws2812.write(pixels).unwrap();
+/// ```
+///
+/// The LED colors may flicker randomly when using Wi-Fi or Bluetooth with Ws2812 LEDs.
+/// This issue can be resolved by:
+///
+/// - Separating Wi-Fi/Bluetooth processing from LED control onto different cores.
+/// - Use multiple memory blocks (memory symbols) in the RMT driver.
+///
+/// To do the second option, prepare `TxRmtDriver` yourself and
+/// initialize with [`Self::new_with_rmt_driver`] as shown below.
+///
+/// ```
+/// # #[cfg(not(target_vendor = "espressif"))]
+/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
+/// #
+/// # use esp_idf_hal::peripherals::Peripherals;
+/// # use esp_idf_hal::rmt::config::TransmitConfig;
+/// # use esp_idf_hal::rmt::TxRmtDriver;
+/// # use smart_leds::{RGB8, SmartLedsWrite};
+/// # use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
+/// #
+/// # let peripherals = Peripherals::take().unwrap();
+/// # let led_pin = peripherals.pins.gpio27;
+/// # let channel = peripherals.rmt.channel0;
+/// #
+/// let driver_config = TransmitConfig::new()
+///     .clock_divider(1)  // Required parameter.
+///     .mem_block_num(2); // Increase the number depending on your code.
+/// let driver = TxRmtDriver::new(channel, led_pin, &driver_config).unwrap();
+///
+/// let mut ws2812 = Ws2812Esp32Rmt::new_with_rmt_driver(driver).unwrap();
+/// #
+/// # let pixels = std::iter::repeat(RGB8::new(30, 0, 0)).take(25);
+/// # ws2812.write(pixels).unwrap();
 /// ```
 pub type Ws2812Esp32Rmt<'d> = LedPixelEsp32Rmt<'d, RGB8, LedPixelColorGrb24>;
 
