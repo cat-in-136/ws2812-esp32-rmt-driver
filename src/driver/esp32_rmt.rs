@@ -368,40 +368,4 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
         }
         Ok(())
     }
-
-    /// Writes pixel data from a pixel-byte sequence to the IO pin.
-    ///
-    /// Byte count per LED pixel and channel order is not handled by this method.
-    /// The pixel data sequence has to be correctly laid out depending on the LED strip model.
-    ///
-    /// Note that this requires `pixel_sequence` to be [`Box`]ed for an allocation free version see [`Self::write_blocking`].
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if an RMT driver error occurred.
-    ///
-    /// # Warning
-    ///
-    /// Iteration of `pixel_sequence` happens inside an interrupt handler so beware of side-effects
-    /// that don't work in interrupt handlers.
-    /// See [esp_idf_hal::rmt::TxRmtDriver#start_iter()] for details.
-    #[cfg(feature = "alloc")]
-    pub fn write<'b, T>(
-        &'static mut self,
-        pixel_sequence: T,
-    ) -> Result<(), Ws2812Esp32RmtDriverError>
-    where
-        T: Iterator<Item = u8> + Send + 'static,
-    {
-        #[cfg(target_vendor = "espressif")]
-        {
-            let signal = self.encoder.encode_iter(pixel_sequence);
-            self.tx.start_iter(signal)?;
-        }
-        #[cfg(not(target_vendor = "espressif"))]
-        {
-            self.pixel_data = Some(pixel_sequence.collect());
-        }
-        Ok(())
-    }
 }
