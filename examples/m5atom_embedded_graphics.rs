@@ -14,9 +14,8 @@ fn main() -> ! {
 
     let peripherals = Peripherals::take().unwrap();
     let led_pin = peripherals.pins.gpio27;
-    let channel = peripherals.rmt.channel0;
 
-    let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(channel, led_pin).unwrap();
+    let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(led_pin).unwrap();
     draw.set_brightness(40);
 
     println!("Start Ws2812DrawTarget!");

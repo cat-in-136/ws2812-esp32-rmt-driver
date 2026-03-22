@@ -1,7 +1,5 @@
 #![cfg(feature = "smart-leds-trait")]
 use esp_idf_hal::peripherals::Peripherals;
-use esp_idf_hal::rmt::config::TransmitConfig;
-use esp_idf_hal::rmt::TxRmtDriver;
 use esp_idf_hal::sys::esp_random;
 use smart_leds::hsv::{hsv2rgb, Hsv};
 use smart_leds_trait::{SmartLedsWrite, RGB8};
@@ -24,11 +22,8 @@ fn main() -> ! {
 
     let peripherals = Peripherals::take().unwrap();
     let led_pin = peripherals.pins.gpio25;
-    let channel = peripherals.rmt.channel0;
 
-    let driver_config = TransmitConfig::new().clock_divider(1); // Required parameter.
-    let tx_driver = TxRmtDriver::new(channel, led_pin, &driver_config).unwrap();
-    let ws2812_driver = Ws2812Esp32RmtDriverBuilder::new_with_rmt_driver(tx_driver)
+    let ws2812_driver = Ws2812Esp32RmtDriverBuilder::new(led_pin)
         .unwrap()
         .encoder_duration(
             &PL9823_T0H_NS,
