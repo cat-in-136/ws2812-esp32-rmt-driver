@@ -61,13 +61,8 @@ impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
 type LedPixelDrawTargetData = Vec<u8>;
 
 /// Default data storage type for `LedPixelDrawTarget`.
-#[cfg(all(not(feature = "std"), feature = "alloc"))]
+#[cfg(not(feature = "std"))]
 type LedPixelDrawTargetData = alloc::vec::Vec<u8>;
-
-/// Default data storage type for `LedPixelDrawTarget`.
-/// In case of heapless, allocate 256-byte capacity vector.
-#[cfg(all(not(feature = "std"), not(feature = "alloc")))]
-type LedPixelDrawTargetData = heapless::Vec<u8, 256>;
 
 /// Target for embedded-graphics drawing operations of the LED pixels.
 ///
@@ -80,9 +75,6 @@ type LedPixelDrawTargetData = heapless::Vec<u8, 256>;
 /// * `Data` - (optional) data storage type. It shall be `Vec`-like struct.
 ///
 /// [`flush()`] operation shall be required to write changes from a framebuffer to the display.
-///
-/// For non-`alloc` no_std environment, `Data` should be explicitly set to some `Vec`-like struct:
-/// e.g., `heapless::Vec<u8, PIXEL_LEN>` where `PIXEL_LEN` equals to `S::size() * CDev::BPP`.
 ///
 /// [`flush()`]: #method.flush
 pub struct LedPixelDrawTarget<'d, CDraw, CDev, S, Data = LedPixelDrawTargetData>
@@ -233,9 +225,6 @@ pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
 ///
 /// [`flush()`] operation shall be required to write changes from a framebuffer to the display.
 ///
-/// For non-`alloc` no_std environment, `Data` should be explicitly set to some `Vec`-like struct:
-/// e.g., `heapless::Vec<u8, PIXEL_LEN>` where `PIXEL_LEN` equals to `S::size() * LedPixelColorGrb24::BPP`.
-///
 /// [`flush()`]: #method.flush
 ///
 /// # Examples
@@ -323,26 +312,6 @@ mod test {
         assert_eq!(
             draw.data,
             core::iter::repeat(0).take(150).collect::<Vec<_>>()
-        );
-    }
-
-    #[test]
-    fn test_ws2812draw_target_new_with_custom_data_struct() {
-        const VEC_CAPACITY: usize = LedPixelMatrix::<10, 5>::PIXEL_LEN * LedPixelColorGrb24::BPP;
-
-        let peripherals = Peripherals::take().unwrap();
-        let led_pin = peripherals.pins.gpio0;
-
-        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>, heapless::Vec<u8, VEC_CAPACITY>>::new(
-            led_pin,
-        )
-        .unwrap();
-        assert_eq!(draw.changed, true);
-        assert_eq!(
-            draw.data,
-            core::iter::repeat(0)
-                .take(150)
-                .collect::<heapless::Vec<_, VEC_CAPACITY>>()
         );
     }
 

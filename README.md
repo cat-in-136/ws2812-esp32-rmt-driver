@@ -56,7 +56,6 @@ $ cargo espflash
 |`embedded_graphics_core`|       |embedded-graphics API `ws2812_esp32_rmt_driver::lib_embedded_graphics`|
 |`smart-leds-trait`      |       |smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`              |
 |`std`                   |x      |use standard library `std`                                            |
-|`alloc`                 |x      |use memory allocator (heap)                                           |
 
 Some examples:
 
@@ -71,21 +70,12 @@ To use `no_std`, disable `default` feature. Then, `std` feature is disabled and 
 
 Some examples:
 
-*  `default-feature = false, features = ["alloc", "embedded-graphics-core"]` to enable embedded-graphics API
-   `ws2812_esp32_rmt_driver::lib_embedded_graphics` for `no_std` environment with memory allocator.
-*  `default-feature = false, features = ["alloc", "smart-leds-trait"]` to enable smart-leds API
-   `ws2812_esp32_rmt_driver::lib_smart_leds` for `no_std` environment with memory allocator.
 *  `default-feature = false, features = ["embedded-graphics-core"]` to enable embedded-graphics API
-   `ws2812_esp32_rmt_driver::lib_embedded_graphics` for `no_std` environment without memory allocator.
+   `ws2812_esp32_rmt_driver::lib_embedded_graphics` for `no_std` environment.
 *  `default-feature = false, features = ["smart-leds-trait"]` to enable smart-leds API
-   `ws2812_esp32_rmt_driver::lib_smart_leds` for `no_std` environment without memory allocator.
+   `ws2812_esp32_rmt_driver::lib_smart_leds` for `no_std` environment.
 
-When using the memory allocator (heap), enable the `alloc` feature. In this case, most processing works in the same way as `std`.
-When not using the memory allocator (heap), leave the `alloc` feature disabled. In this case,
-some APIs cannot be used and processing must be changed.
-For example, in the embedded-graphics API, the pixel data storage must be prepared by the programmer
-using heapless `Vec`-like struct such as `heapless::Vec<u8, X>`.
-
+The new `rmt` API in esp-idf-hal requires `alloc`, so we require that as well.
 
 This library is intended for use with espidf.
 For bare-metal environments (i.e. use with [esp-hal](https://crates.io/crates/esp-hal/)),
