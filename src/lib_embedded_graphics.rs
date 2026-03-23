@@ -12,7 +12,7 @@ use esp_idf_hal::rmt::TxRmtDriver;
 
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
-use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};
+use esp_idf_hal::{gpio::OutputPin, rmt::RmtChannel};
 
 /// LED pixel shape
 pub trait LedPixelShape {
@@ -110,9 +110,9 @@ where
     /// Create a new draw target.
     ///
     /// `channel` shall be different between different `pin`.
-    pub fn new<C: RmtChannel>(
-        channel: impl Peripheral<P = C> + 'd,
-        pin: impl Peripheral<P = impl OutputPin> + 'd,
+    pub fn new<C: RmtChannel + 'd>(
+        channel: C,
+        pin: impl OutputPin + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?;
         Self::new_with_ws2812_driver(driver)

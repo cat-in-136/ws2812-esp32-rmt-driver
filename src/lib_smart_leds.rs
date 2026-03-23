@@ -12,7 +12,7 @@ use smart_leds_trait::{RGB8, RGBW};
 
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
-use esp_idf_hal::{gpio::OutputPin, peripheral::Peripheral, rmt::RmtChannel};
+use esp_idf_hal::{gpio::OutputPin, rmt::RmtChannel};
 
 /// 8-bit RGBW (RGB + white)
 pub type RGBW8 = RGBW<u8, u8>;
@@ -82,9 +82,9 @@ where
     /// Create a new driver wrapper.
     ///
     /// `channel` shall be different between different `pin`.
-    pub fn new<C: RmtChannel>(
-        channel: impl Peripheral<P = C> + 'd,
-        pin: impl Peripheral<P = impl OutputPin> + 'd,
+    pub fn new<C: RmtChannel + 'd>(
+        channel: C,
+        pin: impl OutputPin + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         Self::new_with_ws2812_driver(Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?)
     }

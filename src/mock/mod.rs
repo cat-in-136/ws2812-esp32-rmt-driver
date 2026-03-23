@@ -6,7 +6,6 @@ pub mod esp_idf_hal {
 
     /// Mock module for `esp_idf_hal::gpio`
     pub mod gpio {
-        use super::peripheral::Peripheral;
         use paste::paste;
 
         /// Mock trait for `esp_idf_hal::gpio::OutputPin`.
@@ -52,9 +51,6 @@ pub mod esp_idf_hal {
                         //}
 
                         impl OutputPin for [<Gpio $num>] {}
-                        impl Peripheral for [<Gpio $num>] {
-                            type P=[<Gpio $num>];
-                        }
                     )*
                 }
             };
@@ -64,15 +60,6 @@ pub mod esp_idf_hal {
             24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
             46, 47, 48
         );
-    }
-
-    /// Mock module for `esp_idf_hal::peripheral`
-    pub mod peripheral {
-        /// Mock trait for `esp_idf_hal::peripheral::Peripheral`
-        pub trait Peripheral: Sized {
-            /// Peripheral singleton type
-            type P;
-        }
     }
 
     /// Mock module for `esp_idf_hal::peripherals`
@@ -108,7 +95,6 @@ pub mod esp_idf_hal {
     /// Mock module for `esp_idf_hal::rmt`
     pub mod rmt {
         use super::gpio::OutputPin;
-        use super::peripheral::Peripheral;
         use super::sys::EspError;
         use super::units::Hertz;
         use config::TransmitConfig;
@@ -127,10 +113,6 @@ pub mod esp_idf_hal {
                             pub fn new() -> Self {
                                 Self {}
                             }
-                        }
-
-                        impl Peripheral for [<CHANNEL $num>] {
-                            type P=[<CHANNEL $num>];
                         }
 
                         impl RmtChannel for [<CHANNEL $num>] {}
@@ -172,9 +154,9 @@ pub mod esp_idf_hal {
         impl<'d> TxRmtDriver<'d> {
             /// Initialize the mock of `TxRmtDriver`.
             /// No argument is used in this mock.
-            pub fn new<C: RmtChannel>(
-                _channel: impl Peripheral<P = C> + 'd,
-                _pin: impl Peripheral<P = impl OutputPin> + 'd,
+            pub fn new<C: RmtChannel + 'd>(
+                _channel: C,
+                _pin: impl OutputPin + 'd,
                 _config: &TransmitConfig,
             ) -> Result<Self, EspError> {
                 Ok(Self { _p: PhantomData })

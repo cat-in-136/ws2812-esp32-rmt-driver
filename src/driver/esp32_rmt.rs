@@ -14,7 +14,6 @@ use crate::mock::esp_idf_hal;
 use esp_idf_hal::rmt::{PinState, Pulse, Symbol};
 use esp_idf_hal::{
     gpio::OutputPin,
-    peripheral::Peripheral,
     rmt::{config::TransmitConfig, RmtChannel, TxRmtDriver},
     units::Hertz,
 };
@@ -183,9 +182,9 @@ pub struct Ws2812Esp32RmtDriverBuilder<'d> {
 
 impl<'d> Ws2812Esp32RmtDriverBuilder<'d> {
     /// Creates a new `Ws2812Esp32RmtDriverBuilder`.
-    pub fn new<C: RmtChannel>(
-        channel: impl Peripheral<P = C> + 'd,
-        pin: impl Peripheral<P = impl OutputPin> + 'd,
+    pub fn new<C: RmtChannel + 'd>(
+        channel: C,
+        pin: impl OutputPin + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let config = TransmitConfig::new().clock_divider(1);
         let tx = TxRmtDriver::new(channel, pin, &config)?;
@@ -301,9 +300,9 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// # Errors
     ///
     /// Returns an error if the RMT driver initialization failed.
-    pub fn new<C: RmtChannel>(
-        channel: impl Peripheral<P = C> + 'd,
-        pin: impl Peripheral<P = impl OutputPin> + 'd,
+    pub fn new<C: RmtChannel + 'd>(
+        channel: C,
+        pin: impl OutputPin + 'd,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
         Ws2812Esp32RmtDriverBuilder::new(channel, pin)?.build()
     }
