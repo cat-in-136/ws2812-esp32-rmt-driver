@@ -87,7 +87,7 @@ pub mod esp_idf_hal {
     pub mod rmt {
         use super::gpio::OutputPin;
         use super::sys::EspError;
-        use config::{TransmitConfig, TxChannelConfig};
+        use config::TxChannelConfig;
         use core::marker::PhantomData;
 
         /// Mock struct for `esp_idf_hal::rmt::TxChannelDriver`
@@ -103,15 +103,6 @@ pub mod esp_idf_hal {
                 _config: &TxChannelConfig,
             ) -> Result<Self, EspError> {
                 Ok(Self { _p: PhantomData })
-            }
-
-            pub fn send_iter<S: AsRef<[u8]>>(
-                &mut self,
-                _encoders: impl IntoIterator<Item = &'d mut encoder::BytesEncoder>,
-                _iter: impl Iterator<Item = S>,
-                _config: &TransmitConfig,
-            ) -> Result<(), EspError> {
-                Ok(())
             }
         }
 
