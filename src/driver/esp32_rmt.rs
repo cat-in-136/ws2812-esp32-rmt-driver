@@ -24,9 +24,8 @@ use esp_idf_hal::{
 use crate::mock::esp_idf_sys;
 use esp_idf_sys::EspError;
 
-/// RMT clock resolution used for pulse timing.
-/// TODO: Is it ok to hardcode this? -- this matches HAL examples.
-const RMT_CLOCK_HZ: Hertz = Hertz(10_000_000); // 10 MHz
+/// Default RMT clock resolution used for pulse timing.
+const DEFAULT_RMT_CLOCK_HZ: Hertz = Hertz(10_000_000); // 10 MHz
 
 /// T0H duration time (0 code, high voltage time)
 const WS2812_T0H_NS: Duration = Duration::from_nanos(400);
@@ -142,6 +141,8 @@ impl From<EspError> for Ws2812Esp32RmtDriverError {
 pub struct Ws2812Esp32RmtDriverBuilder<'d> {
     /// TxRMT driver.
     tx: TxChannelDriver<'d>,
+    /// RMT clock resolution, taken from the TxChannelConfig.
+    clock_hz: Hertz,
     /// BytesEncoder with WS2812 timing configuration.
     encoder: Option<BytesEncoder>,
 }
@@ -150,11 +151,23 @@ impl<'d> Ws2812Esp32RmtDriverBuilder<'d> {
     /// Creates a new `Ws2812Esp32RmtDriverBuilder`.
     pub fn new(pin: impl OutputPin + 'd) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let config = TxChannelConfig {
-            resolution: RMT_CLOCK_HZ,
+            resolution: DEFAULT_RMT_CLOCK_HZ,
             ..Default::default()
         };
-        let tx = TxChannelDriver::new(pin, &config)?;
-        Ok(Self { tx, encoder: None })
+        Self::new_with_config(pin, &config)
+    }
+
+    /// Creates a new `Ws2812Esp32RmtDriverBuilder` with a custom `TxChannelConfig`.
+    pub fn new_with_config(
+        pin: impl OutputPin + 'd,
+        config: &TxChannelConfig,
+    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        let tx = TxChannelDriver::new(pin, config)?;
+        Ok(Self {
+            tx,
+            clock_hz: config.resolution,
+            encoder: None,
+        })
     }
 
     /// Sets the encoder duration times.
@@ -166,8 +179,6 @@ impl<'d> Ws2812Esp32RmtDriverBuilder<'d> {
     /// * `t1h` - T1H duration time (1 code, high voltage time)
     /// * `t1l` - T1L duration time (1 code, low voltage time)
     ///
-    /// Note: the clock resolution is fixed at 10 MHz.
-    ///
     /// # Errors
     ///
     /// Returns an error if the encoder initialization failed.
@@ -178,7 +189,7 @@ impl<'d> Ws2812Esp32RmtDriverBuilder<'d> {
         t1h: &Duration,
         t1l: &Duration,
     ) -> Result<Self, Ws2812Esp32RmtDriverError> {
-        self.encoder = Some(make_bytes_encoder(RMT_CLOCK_HZ, t0h, t0l, t1h, t1l)?);
+        self.encoder = Some(make_bytes_encoder(self.clock_hz, t0h, t0l, t1h, t1l)?);
         Ok(self)
     }
 
@@ -188,7 +199,7 @@ impl<'d> Ws2812Esp32RmtDriverBuilder<'d> {
             encoder
         } else {
             make_bytes_encoder(
-                RMT_CLOCK_HZ,
+                self.clock_hz,
                 &WS2812_T0H_NS,
                 &WS2812_T0L_NS,
                 &WS2812_T1H_NS,
@@ -255,6 +266,18 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// Returns an error if the RMT driver initialization failed.
     pub fn new(pin: impl OutputPin + 'd) -> Result<Self, Ws2812Esp32RmtDriverError> {
         Ws2812Esp32RmtDriverBuilder::new(pin)?.build()
+    }
+
+    /// Creates a WS2812 ESP32 RMT driver wrapper with a custom `TxChannelConfig`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the RMT driver initialization failed.
+    pub fn new_with_config(
+        pin: impl OutputPin + 'd,
+        config: &TxChannelConfig,
+    ) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        Ws2812Esp32RmtDriverBuilder::new_with_config(pin, config)?.build()
     }
 
     /// Writes pixel data from a pixel-byte sequence to the IO pin.

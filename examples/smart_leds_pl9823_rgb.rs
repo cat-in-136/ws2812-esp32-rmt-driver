@@ -1,6 +1,8 @@
 #![cfg(feature = "smart-leds-trait")]
 use esp_idf_hal::peripherals::Peripherals;
+use esp_idf_hal::rmt::config::TxChannelConfig;
 use esp_idf_hal::sys::esp_random;
+use esp_idf_hal::units::Hertz;
 use smart_leds::hsv::{hsv2rgb, Hsv};
 use smart_leds_trait::{SmartLedsWrite, RGB8};
 use std::thread::sleep;
@@ -23,7 +25,11 @@ fn main() -> ! {
     let peripherals = Peripherals::take().unwrap();
     let led_pin = peripherals.pins.gpio25;
 
-    let ws2812_driver = Ws2812Esp32RmtDriverBuilder::new(led_pin)
+    let config = TxChannelConfig {
+        resolution: Hertz(10_000_000),
+        ..Default::default()
+    };
+    let ws2812_driver = Ws2812Esp32RmtDriverBuilder::new_with_config(led_pin, &config)
         .unwrap()
         .encoder_duration(
             &PL9823_T0H_NS,
