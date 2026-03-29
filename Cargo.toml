@@ -30,6 +30,10 @@ std = [ "esp-idf-hal/std", "esp-idf-sys/std" ]
 [dev-dependencies]
 smart-leds = "0.4"
 embedded-graphics = "0.8"
+log = "0.4"
+
+[target.'cfg(target_vendor = "espressif")'.dev-dependencies]
+esp-idf-svc = { version = "0.52", default-features = false, features = ["std", "binstart"] }
 
 [build-dependencies]
 embuild = "0.33"

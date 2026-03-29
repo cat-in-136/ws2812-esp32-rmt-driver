@@ -1,9 +1,10 @@
 [build]
-# Uncomment the relevant target for your chip here (ESP32, ESP32-S2, ESP32-S3 or ESP32-C3)
+# Uncomment the relevant target for your chip here (ESP32, ESP32-S2/-S3/-C3 or -C6)
 target = "xtensa-esp32-espidf"
 #target = "xtensa-esp32s2-espidf"
 #target = "xtensa-esp32s3-espidf"
 #target = "riscv32imc-esp-espidf"
+#target = "riscv32imac-esp-espidf"
 
 [target.xtensa-esp32-espidf]
 linker = "ldproxy"
@@ -15,9 +16,13 @@ linker = "ldproxy"
 runner = "espflash flash --monitor"
 rustflags = ["--cfg", "espidf_time64", "-C", "default-linker-libraries"]
 
+[target.riscv32imac-esp-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+rustflags = ["--cfg", "espidf_time64", "-C", "default-linker-libraries"]
+
 [unstable]
 build-std = ["std", "panic_abort"]
-build-std-features = ["panic_immediate_abort"]
 
 [env]
 # Enables the esp-idf-sys "native" build feature (`cargo build --features native`) to build against ESP-IDF v5.5
