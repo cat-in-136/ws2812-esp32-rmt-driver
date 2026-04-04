@@ -14,8 +14,7 @@ fn main() -> ! {
 
     let peripherals = Peripherals::take().unwrap();
     let led_pin = peripherals.pins.gpio27;
-    let channel = peripherals.rmt.channel0;
-    let mut ws2812 = Ws2812Esp32Rmt::new(channel, led_pin).unwrap();
+    let mut ws2812 = Ws2812Esp32Rmt::new(led_pin).unwrap();
 
     println!("Start NeoPixel rainbow!");
 

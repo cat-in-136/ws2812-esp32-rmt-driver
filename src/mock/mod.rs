@@ -44,12 +44,6 @@ pub mod esp_idf_hal {
                         #[derive(Debug, Default)]
                         pub struct [<Gpio $num>] {}
 
-                        //impl [<Gpio $num>] {
-                        //    pub(super) fn new() -> Self {
-                        //        Self {}
-                        //    }
-                        //}
-
                         impl OutputPin for [<Gpio $num>] {}
                     )*
                 }
@@ -65,12 +59,10 @@ pub mod esp_idf_hal {
     /// Mock module for `esp_idf_hal::peripherals`
     pub mod peripherals {
         use super::gpio;
-        use super::rmt;
 
         /// Mock struct for `esp_idf_hal::peripherals::Peripherals`
         pub struct Peripherals {
             pub pins: gpio::Pins,
-            pub rmt: rmt::RMT,
         }
 
         impl Peripherals {
@@ -86,7 +78,6 @@ pub mod esp_idf_hal {
             pub fn new() -> Self {
                 Self {
                     pins: gpio::Pins::new(),
-                    rmt: rmt::RMT::new(),
                 }
             }
         }
@@ -96,106 +87,51 @@ pub mod esp_idf_hal {
     pub mod rmt {
         use super::gpio::OutputPin;
         use super::sys::EspError;
-        use super::units::Hertz;
-        use config::TransmitConfig;
+        use config::TxChannelConfig;
         use core::marker::PhantomData;
-        use paste::paste;
 
-        macro_rules! define_channel_structs {
-            ($($num:expr),*) => {
-                paste! {
-                    $(
-                        #[doc = concat!("Mock struct for `esp_idf_hal::rmt::CHANNEL", stringify!($num) ,"`")]
-                        #[derive(Debug, Default)]
-                        pub struct [<CHANNEL $num>] {}
-
-                        impl [<CHANNEL $num>] {
-                            pub fn new() -> Self {
-                                Self {}
-                            }
-                        }
-
-                        impl RmtChannel for [<CHANNEL $num>] {}
-                    )*
-                }
-            };
-        }
-        define_channel_structs!(0, 1, 2, 3, 4, 5, 6, 7);
-
-        /// mock struct for `esp_idf_hal::rmt::RMT`
-        #[derive(Debug, Default)]
-        pub struct RMT {
-            pub channel0: CHANNEL0,
-            pub channel1: CHANNEL1,
-            pub channel2: CHANNEL2,
-            pub channel3: CHANNEL3,
-            pub channel4: CHANNEL4,
-            pub channel5: CHANNEL5,
-            pub channel6: CHANNEL6,
-            pub channel7: CHANNEL7,
-        }
-
-        impl RMT {
-            pub fn new() -> Self {
-                Default::default()
-            }
-        }
-
-        /// Mock trait fo `esp_idf_hal::rmt::RmtChannel`
-        pub trait RmtChannel {}
-
-        //pub type RmtTransmitConfig = config::TransmitConfig;
-
-        /// Mock module for `esp_idf_hal::rmt::TxRmtDriver`
-        pub struct TxRmtDriver<'d> {
+        /// Mock struct for `esp_idf_hal::rmt::TxChannelDriver`
+        pub struct TxChannelDriver<'d> {
             _p: PhantomData<&'d mut ()>,
         }
 
-        impl<'d> TxRmtDriver<'d> {
-            /// Initialize the mock of `TxRmtDriver`.
+        impl<'d> TxChannelDriver<'d> {
+            /// Initialize the mock of `TxChannelDriver`.
             /// No argument is used in this mock.
-            pub fn new<C: RmtChannel + 'd>(
-                _channel: C,
+            pub fn new(
                 _pin: impl OutputPin + 'd,
-                _config: &TransmitConfig,
+                _config: &TxChannelConfig,
             ) -> Result<Self, EspError> {
                 Ok(Self { _p: PhantomData })
             }
-
-            pub fn counter_clock(&self) -> Result<Hertz, EspError> {
-                let ticks_hz: u32 = 80000000; // 80MHz
-                Ok(Hertz(ticks_hz))
-            }
         }
 
-        /// Mock module for `esp_idf_hal::rmt::config`
+        /// Mock module for `esp_idf_hal::rmt::encoder`
+        pub mod encoder {
+            pub struct BytesEncoder {}
+        }
+
+        /// Mock struct for `esp_idf_hal::rmt::config`
         pub mod config {
-            /// Mock struct for `esp_idf_hal::rmt::config::TransmitConfig`
+            use super::super::units::Hertz;
+
+            /// Mock struct for `esp_idf_hal::rmt::config::TxChannelConfig`
             #[derive(Debug, Clone)]
-            pub struct TransmitConfig {
-                pub clock_divider: u8,
-                pub mem_block_num: u8,
-                // Other parameters are omitted
+            pub struct TxChannelConfig {
+                pub resolution: Hertz,
             }
 
-            impl TransmitConfig {
-                pub fn new() -> Self {
+            impl Default for TxChannelConfig {
+                fn default() -> Self {
                     Self {
-                        mem_block_num: 1,
-                        clock_divider: 80,
+                        resolution: Hertz(10_000_000),
                     }
                 }
-                #[must_use]
-                pub fn clock_divider(mut self, divider: u8) -> Self {
-                    self.clock_divider = divider;
-                    self
-                }
-                #[must_use]
-                pub fn mem_block_num(mut self, mem_block_num: u8) -> Self {
-                    self.mem_block_num = mem_block_num;
-                    self
-                }
             }
+
+            /// Mock struct for `esp_idf_hal::rmt::config::TransmitConfig`
+            #[derive(Debug, Clone, Default)]
+            pub struct TransmitConfig {}
         }
     }
 
@@ -205,7 +141,7 @@ pub mod esp_idf_hal {
         pub type LargeValueType = u64;
 
         /// Mock struct for `esp_idf_hal::units::Hertz`
-        #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Default)]
+        #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Default, Debug)]
         pub struct Hertz(pub ValueType);
     }
 }
