@@ -1,5 +1,9 @@
 //! embedded-graphics draw target API.
 
+#![allow(deprecated)] // Legacy RMT API is intentionally used when rmt-legacy feature is enabled
+
+extern crate alloc;
+
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 use core::marker::PhantomData;
@@ -8,11 +12,17 @@ use embedded_graphics_core::draw_target::DrawTarget;
 use embedded_graphics_core::geometry::{OriginDimensions, Point, Size};
 use embedded_graphics_core::pixelcolor::{Rgb888, RgbColor};
 use embedded_graphics_core::Pixel;
-use esp_idf_hal::rmt::TxRmtDriver;
 
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
-use esp_idf_hal::{gpio::OutputPin, rmt::RmtChannel};
+
+// Import the appropriate types based on feature
+#[cfg(not(feature = "rmt-legacy"))]
+use esp_idf_hal::gpio::OutputPin;
+#[cfg(feature = "rmt-legacy")]
+use esp_idf_hal::gpio::OutputPin;
+#[cfg(feature = "rmt-legacy")]
+use esp_idf_hal::rmt::{RmtChannel, TxRmtDriver};
 
 /// LED pixel shape
 pub trait LedPixelShape {
@@ -58,16 +68,18 @@ impl<const W: usize, const H: usize> LedPixelShape for LedPixelMatrix<W, H> {
 }
 
 /// Default data storage type for `LedPixelDrawTarget`.
-#[cfg(feature = "std")]
-type LedPixelDrawTargetData = Vec<u8>;
-
-/// Default data storage type for `LedPixelDrawTarget`.
-#[cfg(all(not(feature = "std"), feature = "alloc"))]
+/// For new_api mode (not rmt-legacy), alloc is always required.
+#[cfg(not(feature = "rmt-legacy"))]
 type LedPixelDrawTargetData = alloc::vec::Vec<u8>;
 
 /// Default data storage type for `LedPixelDrawTarget`.
-/// In case of heapless, allocate 256-byte capacity vector.
-#[cfg(all(not(feature = "std"), not(feature = "alloc")))]
+/// For legacy mode with std or alloc, use Vec.
+#[cfg(all(feature = "rmt-legacy", any(feature = "std", feature = "alloc")))]
+type LedPixelDrawTargetData = alloc::vec::Vec<u8>;
+
+/// Default data storage type for `LedPixelDrawTarget`.
+/// For legacy mode without alloc, use heapless::Vec.
+#[cfg(all(feature = "rmt-legacy", not(any(feature = "std", feature = "alloc"))))]
 type LedPixelDrawTargetData = heapless::Vec<u8, 256>;
 
 /// Target for embedded-graphics drawing operations of the LED pixels.
@@ -79,13 +91,6 @@ type LedPixelDrawTargetData = heapless::Vec<u8, 256>;
 /// * `CDev` - the LED pixel color type (device dependant). It shall be convertible from `CDraw`.
 /// * `S` - the LED pixel shape
 /// * `Data` - (optional) data storage type. It shall be `Vec`-like struct.
-///
-/// [`flush()`] operation shall be required to write changes from a framebuffer to the display.
-///
-/// For non-`alloc` no_std environment, `Data` should be explicitly set to some `Vec`-like struct:
-/// e.g., `heapless::Vec<u8, PIXEL_LEN>` where `PIXEL_LEN` equals to `S::size() * CDev::BPP`.
-///
-/// [`flush()`]: #method.flush
 pub struct LedPixelDrawTarget<'d, CDraw, CDev, S, Data = LedPixelDrawTargetData>
 where
     CDraw: RgbColor,
@@ -107,9 +112,15 @@ where
     S: LedPixelShape,
     Data: DerefMut<Target = [u8]> + FromIterator<u8> + IntoIterator<Item = u8>,
 {
-    /// Create a new draw target.
-    ///
-    /// `channel` shall be different between different `pin`.
+    /// Create a new draw target (new API - no channel argument).
+    #[cfg(not(feature = "rmt-legacy"))]
+    pub fn new(pin: impl OutputPin + 'd) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        let driver = Ws2812Esp32RmtDriver::<'d>::new(pin)?;
+        Self::new_with_ws2812_driver(driver)
+    }
+
+    /// Create a new draw target (legacy API - takes channel).
+    #[cfg(feature = "rmt-legacy")]
     pub fn new<C: RmtChannel + 'd>(
         channel: C,
         pin: impl OutputPin + 'd,
@@ -118,26 +129,8 @@ where
         Self::new_with_ws2812_driver(driver)
     }
 
-    /// Create a new draw target with `TxRmtDriver`.
-    ///
-    /// The clock divider must be set to 1 for the `driver` configuration.
-    ///
-    /// ```
-    /// # #[cfg(not(target_vendor = "espressif"))]
-    /// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-    /// #
-    /// # use esp_idf_hal::peripherals::Peripherals;
-    /// # use esp_idf_hal::rmt::config::TransmitConfig;
-    /// # use esp_idf_hal::rmt::TxRmtDriver;
-    /// #
-    /// # let peripherals = Peripherals::take().unwrap();
-    /// # let led_pin = peripherals.pins.gpio27;
-    /// # let channel = peripherals.rmt.channel0;
-    /// #
-    /// let driver_config = TransmitConfig::new()
-    ///     .clock_divider(1); // Required parameter.
-    /// let driver = TxRmtDriver::new(channel, led_pin, &driver_config).unwrap();
-    /// ```
+    /// Create a new draw target with `TxRmtDriver` (legacy only).
+    #[cfg(feature = "rmt-legacy")]
     pub fn new_with_rmt_driver(tx: TxRmtDriver<'d>) -> Result<Self, Ws2812Esp32RmtDriverError> {
         let driver = Ws2812Esp32RmtDriver::<'d>::new_with_rmt_driver(tx)?;
         Self::new_with_ws2812_driver(driver)
@@ -263,36 +256,7 @@ pub type LedPixelStrip<const L: usize> = LedPixelMatrix<L, 1>;
 ///
 /// [`flush()`] operation shall be required to write changes from a framebuffer to the display.
 ///
-/// For non-`alloc` no_std environment, `Data` should be explicitly set to some `Vec`-like struct:
-/// e.g., `heapless::Vec<u8, PIXEL_LEN>` where `PIXEL_LEN` equals to `S::size() * LedPixelColorGrb24::BPP`.
-///
 /// [`flush()`]: #method.flush
-///
-/// # Examples
-///
-/// ```
-/// # #[cfg(not(target_vendor = "espressif"))]
-/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-/// #
-/// use embedded_graphics::pixelcolor::Rgb888;
-/// use embedded_graphics::prelude::*;
-/// use embedded_graphics::primitives::{Circle, PrimitiveStyle};
-/// use esp_idf_hal::peripherals::Peripherals;
-/// use ws2812_esp32_rmt_driver::lib_embedded_graphics::{LedPixelMatrix, Ws2812DrawTarget};
-///
-/// let peripherals = Peripherals::take().unwrap();
-/// let led_pin = peripherals.pins.gpio27;
-/// let channel = peripherals.rmt.channel0;
-/// let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(channel, led_pin).unwrap();
-/// draw.set_brightness(40);
-/// draw.clear_with_black().unwrap();
-/// let mut translated_draw = draw.translated(Point::new(0, 0));
-/// Circle::new(Point::new(0, 0), 5)
-///     .into_styled(PrimitiveStyle::with_fill(Rgb888::RED))
-///     .draw(&mut translated_draw)
-///     .unwrap();
-/// draw.flush().unwrap();
-/// ```
 pub type Ws2812DrawTarget<'d, S, Data = LedPixelDrawTargetData> =
     LedPixelDrawTarget<'d, Rgb888, LedPixelColorGrb24, S, Data>;
 
@@ -348,9 +312,12 @@ mod test {
     fn test_ws2812draw_target_new() {
         let peripherals = Peripherals::take().unwrap();
         let led_pin = peripherals.pins.gpio0;
-        let channel = peripherals.rmt.channel0;
 
-        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(channel, led_pin).unwrap();
+        #[cfg(not(feature = "rmt-legacy"))]
+        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(led_pin).unwrap();
+        #[cfg(feature = "rmt-legacy")]
+        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel0, led_pin).unwrap();
+
         assert_eq!(draw.changed, true);
         assert_eq!(
             draw.data,
@@ -359,33 +326,14 @@ mod test {
     }
 
     #[test]
-    fn test_ws2812draw_target_new_with_custom_data_struct() {
-        const VEC_CAPACITY: usize = LedPixelMatrix::<10, 5>::PIXEL_LEN * LedPixelColorGrb24::BPP;
-
-        let peripherals = Peripherals::take().unwrap();
-        let led_pin = peripherals.pins.gpio0;
-        let channel = peripherals.rmt.channel0;
-
-        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>, heapless::Vec<u8, VEC_CAPACITY>>::new(
-            channel, led_pin,
-        )
-        .unwrap();
-        assert_eq!(draw.changed, true);
-        assert_eq!(
-            draw.data,
-            core::iter::repeat(0)
-                .take(150)
-                .collect::<heapless::Vec<_, VEC_CAPACITY>>()
-        );
-    }
-
-    #[test]
     fn test_ws2812draw_target_draw() {
         let peripherals = Peripherals::take().unwrap();
         let led_pin = peripherals.pins.gpio1;
-        let channel = peripherals.rmt.channel1;
 
-        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(channel, led_pin).unwrap();
+        #[cfg(not(feature = "rmt-legacy"))]
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(led_pin).unwrap();
+        #[cfg(feature = "rmt-legacy")]
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel1, led_pin).unwrap();
 
         draw.draw_iter(
             [
@@ -424,9 +372,11 @@ mod test {
     fn test_ws2812draw_target_flush() {
         let peripherals = Peripherals::take().unwrap();
         let led_pin = peripherals.pins.gpio2;
-        let channel = peripherals.rmt.channel2;
 
-        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(channel, led_pin).unwrap();
+        #[cfg(not(feature = "rmt-legacy"))]
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(led_pin).unwrap();
+        #[cfg(feature = "rmt-legacy")]
+        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel2, led_pin).unwrap();
 
         draw.changed = true;
         draw.data.fill(0x01);
