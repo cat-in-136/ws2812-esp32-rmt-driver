@@ -18,7 +18,8 @@ fn main() -> ! {
     #[cfg(not(feature = "rmt-legacy"))]
     let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(led_pin).unwrap();
     #[cfg(feature = "rmt-legacy")]
-    let mut draw = Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(peripherals.rmt.channel0, led_pin).unwrap();
+    let mut draw =
+        Ws2812DrawTarget::<LedPixelMatrix<5, 5>>::new(peripherals.rmt.channel0, led_pin).unwrap();
 
     draw.set_brightness(40);
 

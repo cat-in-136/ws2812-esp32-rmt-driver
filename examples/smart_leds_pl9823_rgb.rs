@@ -42,8 +42,7 @@ fn main() -> ! {
             .unwrap()
             .build()
             .unwrap();
-        LedPixelEsp32Rmt::<RGB8, LedPixelColorRgb24>::new_with_ws2812_driver(ws2812_driver)
-            .unwrap()
+        LedPixelEsp32Rmt::<RGB8, LedPixelColorRgb24>::new_with_ws2812_driver(ws2812_driver).unwrap()
     };
 
     #[cfg(feature = "rmt-legacy")]
@@ -66,8 +65,7 @@ fn main() -> ! {
             .unwrap()
             .build()
             .unwrap();
-        LedPixelEsp32Rmt::<RGB8, LedPixelColorRgb24>::new_with_ws2812_driver(ws2812_driver)
-            .unwrap()
+        LedPixelEsp32Rmt::<RGB8, LedPixelColorRgb24>::new_with_ws2812_driver(ws2812_driver).unwrap()
     };
 
     println!("Start NeoPixel rainbow!");

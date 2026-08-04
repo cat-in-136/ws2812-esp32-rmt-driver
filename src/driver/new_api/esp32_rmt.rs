@@ -12,13 +12,15 @@ use std::vec::Vec;
 
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
+#[cfg(not(target_vendor = "espressif"))]
+use crate::mock::esp_idf_sys::EspError;
 #[cfg(target_vendor = "espressif")]
 use esp_idf_hal::{
-    gpio::{OutputPin},
+    gpio::OutputPin,
     rmt::{
         config::{TransmitConfig, TxChannelConfig},
         encoder::{BytesEncoder, BytesEncoderConfig},
-        PinState, Pulse, Symbol, TxChannelDriver, TxQueue
+        PinState, Pulse, Symbol, TxChannelDriver, TxQueue,
     },
     units::Hertz,
 };
@@ -34,8 +36,6 @@ use esp_idf_hal::{
 };
 #[cfg(target_vendor = "espressif")]
 use esp_idf_sys::EspError;
-#[cfg(not(target_vendor = "espressif"))]
-use crate::mock::esp_idf_sys::EspError;
 
 /// Default RMT clock resolution used for pulse timing.
 const DEFAULT_RMT_CLOCK_HZ: Hertz = Hertz(10_000_000); // 10 MHz
@@ -247,10 +247,7 @@ impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// # Errors
     ///
     /// Returns an error if an RMT driver error occurred.
-    pub fn write_blocking<T>(
-        &mut self,
-        pixel_sequence: T,
-    ) -> Result<(), Ws2812Esp32RmtDriverError>
+    pub fn write_blocking<T>(&mut self, pixel_sequence: T) -> Result<(), Ws2812Esp32RmtDriverError>
     where
         T: Iterator<Item = u8>,
     {

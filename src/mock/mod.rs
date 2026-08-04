@@ -296,8 +296,12 @@ pub mod esp_idf_hal {
             }
 
             impl BytesEncoder {
-                pub fn with_config(_config: &BytesEncoderConfig) -> Result<Self, crate::mock::esp_idf_sys::EspError> {
-                    Ok(Self { _marker: PhantomData })
+                pub fn with_config(
+                    _config: &BytesEncoderConfig,
+                ) -> Result<Self, crate::mock::esp_idf_sys::EspError> {
+                    Ok(Self {
+                        _marker: PhantomData,
+                    })
                 }
             }
 
@@ -333,10 +337,16 @@ pub mod esp_idf_hal {
 
         impl<'c, 'd, E> TxQueue<'c, 'd, E> {
             pub fn new() -> Self {
-                Self { _marker: PhantomData }
+                Self {
+                    _marker: PhantomData,
+                }
             }
 
-            pub fn push(&mut self, signal: &[u8], _config: &config::TransmitConfig) -> Result<(), crate::mock::esp_idf_sys::EspError> {
+            pub fn push(
+                &mut self,
+                signal: &[u8],
+                _config: &config::TransmitConfig,
+            ) -> Result<(), crate::mock::esp_idf_sys::EspError> {
                 if signal.is_empty() {
                     // Empty signals are a no-op in the mock (consistent with driver behavior)
                     return Ok(());
@@ -364,7 +374,11 @@ pub mod esp_idf_hal {
         pub struct Pulse;
 
         impl Pulse {
-            pub fn new_with_duration(_clock_hz: Hertz, _level: super::rmt::PinState, _duration: core::time::Duration) -> Result<Self, crate::mock::esp_idf_sys::EspError> {
+            pub fn new_with_duration(
+                _clock_hz: Hertz,
+                _level: super::rmt::PinState,
+                _duration: core::time::Duration,
+            ) -> Result<Self, crate::mock::esp_idf_sys::EspError> {
                 Ok(Self)
             }
         }

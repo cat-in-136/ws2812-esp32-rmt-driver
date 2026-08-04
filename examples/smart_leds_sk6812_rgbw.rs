@@ -17,7 +17,9 @@ fn main() -> ! {
     #[cfg(not(feature = "rmt-legacy"))]
     let mut ws2812 = LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(led_pin).unwrap();
     #[cfg(feature = "rmt-legacy")]
-    let mut ws2812 = LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(peripherals.rmt.channel0, led_pin).unwrap();
+    let mut ws2812 =
+        LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(peripherals.rmt.channel0, led_pin)
+            .unwrap();
 
     loop {
         let pixels = std::iter::repeat(RGBW8::new_alpha(6, 0, 0, White(0))).take(25);

@@ -10,9 +10,11 @@ use core::fmt;
 use core::time::Duration;
 
 #[cfg(not(target_vendor = "espressif"))]
-use core::marker::PhantomData;
-#[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
+#[cfg(not(target_vendor = "espressif"))]
+use crate::mock::esp_idf_sys::EspError;
+#[cfg(not(target_vendor = "espressif"))]
+use core::marker::PhantomData;
 #[cfg(target_vendor = "espressif")]
 use esp_idf_hal::rmt::{PinState, Pulse, Symbol};
 use esp_idf_hal::{
@@ -22,8 +24,6 @@ use esp_idf_hal::{
 };
 #[cfg(target_vendor = "espressif")]
 use esp_idf_sys::EspError;
-#[cfg(not(target_vendor = "espressif"))]
-use crate::mock::esp_idf_sys::EspError;
 
 #[cfg(all(not(feature = "std"), not(target_vendor = "espressif")))]
 use alloc::vec::Vec;

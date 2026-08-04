@@ -316,7 +316,9 @@ mod test {
         #[cfg(not(feature = "rmt-legacy"))]
         let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(led_pin).unwrap();
         #[cfg(feature = "rmt-legacy")]
-        let draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel0, led_pin).unwrap();
+        let draw =
+            Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel0, led_pin)
+                .unwrap();
 
         assert_eq!(draw.changed, true);
         assert_eq!(
@@ -333,7 +335,9 @@ mod test {
         #[cfg(not(feature = "rmt-legacy"))]
         let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(led_pin).unwrap();
         #[cfg(feature = "rmt-legacy")]
-        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel1, led_pin).unwrap();
+        let mut draw =
+            Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel1, led_pin)
+                .unwrap();
 
         draw.draw_iter(
             [
@@ -376,7 +380,9 @@ mod test {
         #[cfg(not(feature = "rmt-legacy"))]
         let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(led_pin).unwrap();
         #[cfg(feature = "rmt-legacy")]
-        let mut draw = Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel2, led_pin).unwrap();
+        let mut draw =
+            Ws2812DrawTarget::<LedPixelMatrix<10, 5>>::new(peripherals.rmt.channel2, led_pin)
+                .unwrap();
 
         draw.changed = true;
         draw.data.fill(0x01);

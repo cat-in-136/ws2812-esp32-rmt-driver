@@ -7,10 +7,10 @@ use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::vec::Vec;
 use core::marker::PhantomData;
-use smart_leds_trait::RGB8;
 #[cfg(feature = "alloc")]
 use smart_leds_trait::SmartLedsWrite;
-use smart_leds_trait::{RGBW};
+use smart_leds_trait::RGB8;
+use smart_leds_trait::RGBW;
 
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
