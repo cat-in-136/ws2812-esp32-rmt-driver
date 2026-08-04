@@ -57,7 +57,7 @@ $ cargo espflash
 |`smart-leds-trait`      |       |smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`              |
 |`std`                   |x      |use standard library `std`                                            |
 |`alloc`                 |x      |use memory allocator (heap)                                           |
-|`rmt-legacy`            |x      |Use legacy RMT API (backward compatible, no_std + no_alloc support)  |
+|`rmt-legacy`            |      |Use legacy RMT API (backward compatible, no_std + no_alloc support). Enables `esp-idf-hal/rmt-legacy`|
 
 Some examples:
 
@@ -69,48 +69,47 @@ Some examples:
 ## RMT API modes
 
 This library supports two RMT API modes:
+* **`rmt-legacy`** (optional, not default): Uses the legacy `TxRmtDriver` API from esp-idf-hal. Enabling this feature also enables `esp-idf-hal/rmt-legacy`. This is fully backward compatible with existing code. It supports `no_std` without allocator (via `heapless::Vec`).
 
-* **`rmt-legacy`** (default): Uses the legacy `TxRmtDriver` API from esp-idf-hal. This is fully backward compatible with existing code. It supports `no_std` without allocator (via `heapless::Vec`).
-* **New API** (when `rmt-legacy` is NOT enabled): Uses the new `TxChannelDriver` API from esp-idf-hal 0.46+. This removes the need to manually specify an RMT channel. The `alloc` feature is required.
+* **New API** (default, when `rmt-legacy` is NOT enabled): Uses the new `TxChannelDriver` API from esp-idf-hal 0.46+. This removes the need to manually specify an RMT channel. The `alloc` feature is required.
 
 When `rmt-legacy` feature is not enabled, the new API is automatically selected.
 
-### Migrating to the new API (removing `rmt-legacy`)
+### Legacy RMT API (rmt-legacy) vs New API
 
 ```toml
-# Before (legacy, default)
-[dependencies.ws2812-esp32-rmt-driver]
-# default-features = true (rmt-legacy is default)
+// new API - rmt-legacy not enabled
+[dependencies]
+ws2812-esp32-rmt-driver = { features = ["smart-leds-trait"] }
 
-# After (new API)
-[dependencies.ws2812-esp32-rmt-driver]
-default-features = false
-features = ["std", "smart-leds-trait"]
+// rmt-legacy
+[dependencies]
+ws2812-esp32-rmt-driver = { features = ["rmt-legacy", "smart-leds-trait"] }
 ```
 
 Code changes:
 ```rust
-// Before (legacy)
+// new API - rmt-legacy not enabled
+let mut driver = Ws2812Esp32Rmt::new(led_pin)?;
+
+// rmt-legacy
 let channel = peripherals.rmt.channel0;
 let mut driver = Ws2812Esp32Rmt::new(channel, led_pin)?;
-
-// After (new API - rmt-legacy not enabled)
-let mut driver = Ws2812Esp32Rmt::new(led_pin)?;
 ```
 
 For custom config:
 ```rust
-// Before (legacy)
-let config = TransmitConfig::new().clock_divider(1);
-let tx = TxRmtDriver::new(channel, led_pin, &config)?;
-let driver = Ws2812Esp32RmtDriver::new_with_rmt_driver(tx)?;
-
-// After (new API)
+// new API - rmt-legacy not enabled
 let config = TxChannelConfig {
     resolution: Hertz(10_000_000),
     ..Default::default()
 };
 let driver = Ws2812Esp32RmtDriver::new_with_config(led_pin, &config)?;
+
+// rmt-legacy
+let config = TransmitConfig::new().clock_divider(1);
+let tx = TxRmtDriver::new(channel, led_pin, &config)?;
+let driver = Ws2812Esp32RmtDriver::new_with_rmt_driver(tx)?;
 ```
 
 The new API also provides non-blocking queue operations:
