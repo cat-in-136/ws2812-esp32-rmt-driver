@@ -323,7 +323,9 @@ mod test {
         assert_eq!(draw.changed, true);
         assert_eq!(
             draw.data,
-            core::iter::repeat(0).take(150).collect::<Vec<_>>()
+            core::iter::repeat(0)
+                .take(150)
+                .collect::<LedPixelDrawTargetData>()
         );
     }
 
@@ -362,7 +364,7 @@ mod test {
             core::iter::repeat([0x08, 0x07, 0x0A])
                 .take(50)
                 .flatten()
-                .collect::<Vec<_>>()
+                .collect::<LedPixelDrawTargetData>()
         );
         draw.changed = false;
 
@@ -388,7 +390,7 @@ mod test {
         draw.data.fill(0x01);
         draw.driver.pixel_data = None;
         draw.flush().unwrap();
-        assert_eq!(draw.driver.pixel_data.unwrap(), draw.data);
+        assert_eq!(draw.driver.pixel_data.unwrap(), draw.data.as_slice());
         assert_eq!(draw.changed, false);
 
         draw.driver.pixel_data = None;

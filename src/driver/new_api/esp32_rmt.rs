@@ -14,25 +14,15 @@ use std::vec::Vec;
 use crate::mock::esp_idf_hal;
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_sys::EspError;
-#[cfg(target_vendor = "espressif")]
 use esp_idf_hal::{
     gpio::OutputPin,
-    rmt::{
-        config::{TransmitConfig, TxChannelConfig},
-        encoder::{BytesEncoder, BytesEncoderConfig},
-        PinState, Pulse, Symbol, TxChannelDriver, TxQueue,
-    },
+    rmt::{config::TxChannelConfig, encoder::BytesEncoder, TxChannelDriver},
     units::Hertz,
 };
-#[cfg(not(target_vendor = "espressif"))]
-use esp_idf_hal::{
-    gpio::OutputPin,
-    rmt::{
-        config::{TransmitConfig, TxChannelConfig},
-        encoder::{BytesEncoder, BytesEncoderConfig},
-        Pulse, Symbol, TxChannelDriver, TxQueue,
-    },
-    units::Hertz,
+
+#[cfg(target_vendor = "espressif")]
+use esp_idf_hal::rmt::{
+    config::TransmitConfig, encoder::BytesEncoderConfig, PinState, Pulse, Symbol, TxQueue,
 };
 #[cfg(target_vendor = "espressif")]
 use esp_idf_sys::EspError;

@@ -88,7 +88,7 @@ ws2812-esp32-rmt-driver = { features = ["rmt-legacy", "smart-leds-trait"] }
 ```
 
 Code changes:
-```rust
+```rust,ignore
 // new API - rmt-legacy not enabled
 let mut driver = Ws2812Esp32Rmt::new(led_pin)?;
 
@@ -98,7 +98,7 @@ let mut driver = Ws2812Esp32Rmt::new(channel, led_pin)?;
 ```
 
 For custom config:
-```rust
+```rust,ignore
 // new API - rmt-legacy not enabled
 let config = TxChannelConfig {
     resolution: Hertz(10_000_000),
@@ -113,7 +113,7 @@ let driver = Ws2812Esp32RmtDriver::new_with_rmt_driver(tx)?;
 ```
 
 The new API also provides non-blocking queue operations:
-```rust
+```rust,ignore
 let mut driver = Ws2812Esp32RmtDriver::new(led_pin)?;
 let mut queue = driver.queue();
 queue.push(&pixel_data)?;  // non-blocking

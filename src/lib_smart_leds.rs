@@ -199,6 +199,7 @@ mod test {
     use crate::mock::esp_idf_hal::peripherals::Peripherals;
 
     #[test]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     fn test_ws2812_esp32_rmt_smart_leds() {
         let sample_data = [RGB8::new(0x00, 0x01, 0x02), RGB8::new(0x03, 0x04, 0x05)];
         let expected_values: [u8; 6] = [0x01, 0x00, 0x02, 0x04, 0x03, 0x05];
