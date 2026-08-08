@@ -64,13 +64,11 @@ pub mod esp_idf_hal {
 
     /// Mock module for `esp_idf_hal::peripherals`
     pub mod peripherals {
-        use super::gpio;
-        use super::rmt;
-
         /// Mock struct for `esp_idf_hal::peripherals::Peripherals`
         pub struct Peripherals {
-            pub pins: gpio::Pins,
-            pub rmt: rmt::RMT,
+            pub pins: super::gpio::Pins,
+            #[cfg(feature = "rmt-legacy")]
+            pub rmt: super::rmt::RMT,
         }
 
         impl Peripherals {
@@ -85,14 +83,16 @@ pub mod esp_idf_hal {
             // and `take()` should be used instead.
             pub fn new() -> Self {
                 Self {
-                    pins: gpio::Pins::new(),
-                    rmt: rmt::RMT::new(),
+                    pins: super::gpio::Pins::new(),
+                    #[cfg(feature = "rmt-legacy")]
+                    rmt: super::rmt::RMT::new(),
                 }
             }
         }
     }
 
     /// Mock module for `esp_idf_hal::rmt`
+    #[cfg(feature = "rmt-legacy")]
     pub mod rmt {
         use super::gpio::OutputPin;
         use super::sys::EspError;
@@ -199,13 +199,198 @@ pub mod esp_idf_hal {
         }
     }
 
+    /// Mock module for `esp_idf_hal::rmt`
+    #[cfg(not(feature = "rmt-legacy"))]
+    pub mod rmt {
+        use super::gpio::OutputPin;
+        use super::units::Hertz;
+        use config::TxChannelConfig;
+        use core::marker::PhantomData;
+
+        /// Mock enum for `esp_idf_hal::rmt::PinState`
+        #[derive(Debug, Clone, Copy)]
+        pub enum PinState {
+            High,
+            Low,
+        }
+
+        /// Mock struct for `esp_idf_hal::rmt::TxChannelDriver`
+        pub struct TxChannelDriver<'d> {
+            _p: PhantomData<&'d mut ()>,
+        }
+
+        impl<'d> TxChannelDriver<'d> {
+            /// Initialize the mock of `TxChannelDriver`.
+            pub fn new(
+                _pin: impl OutputPin + 'd,
+                _config: &TxChannelConfig,
+            ) -> Result<Self, crate::mock::esp_idf_sys::EspError> {
+                Ok(Self { _p: PhantomData })
+            }
+        }
+
+        /// Mock module for `esp_idf_hal::rmt::config`
+        pub mod config {
+            use super::super::units::Hertz;
+
+            /// Mock struct for `esp_idf_hal::rmt::config::TxChannelConfig`
+            #[derive(Debug, Clone, Default)]
+            pub struct TxChannelConfig {
+                pub resolution: Hertz,
+                pub interrupt_priority: u8,
+                pub memory_access: MemoryAccess,
+                pub transaction_queue_depth: u8,
+                pub invert_out: bool,
+                pub io_loop_back: bool,
+                pub io_od_mode: bool,
+                pub allow_pd: bool,
+            }
+
+            impl TxChannelConfig {
+                pub fn new() -> Self {
+                    Self {
+                        resolution: Hertz(10_000_000),
+                        ..Default::default()
+                    }
+                }
+            }
+
+            #[derive(Debug, Clone, Default)]
+            pub struct MemoryAccess {
+                pub symbols: usize,
+                pub is_direct: bool,
+            }
+
+            impl MemoryAccess {
+                pub fn symbols(&self) -> usize {
+                    self.symbols
+                }
+                pub fn is_direct(&self) -> bool {
+                    self.is_direct
+                }
+            }
+
+            /// Mock struct for `esp_idf_hal::rmt::config::TransmitConfig`
+            #[derive(Debug, Clone, Default)]
+            pub struct TransmitConfig {
+                pub loop_count: i32,
+                pub eot_level: bool,
+                pub queue_non_blocking: bool,
+            }
+
+            impl TransmitConfig {
+                pub fn new() -> Self {
+                    Default::default()
+                }
+            }
+        }
+
+        /// Mock module for `esp_idf_hal::rmt::encoder`
+        pub mod encoder {
+            use core::marker::PhantomData;
+
+            /// Mock struct for `esp_idf_hal::rmt::encoder::BytesEncoder`
+            #[derive(Debug, Default)]
+            pub struct BytesEncoder {
+                _marker: PhantomData<()>,
+            }
+
+            impl BytesEncoder {
+                pub fn with_config(
+                    _config: &BytesEncoderConfig,
+                ) -> Result<Self, crate::mock::esp_idf_sys::EspError> {
+                    Ok(Self {
+                        _marker: PhantomData,
+                    })
+                }
+            }
+
+            /// Mock struct for `esp_idf_hal::rmt::encoder::BytesEncoderConfig`
+            #[derive(Debug, Default)]
+            pub struct BytesEncoderConfig {
+                pub bit0: super::Symbol,
+                pub bit1: super::Symbol,
+                pub msb_first: bool,
+            }
+
+            /// Mock trait for `Encoder`
+            pub trait Encoder {
+                type Item;
+            }
+
+            /// Mock trait for `RawEncoder`
+            pub trait RawEncoder {
+                type Item;
+                fn handle(&mut self) -> *mut ();
+            }
+
+            /// Convert encoder to raw
+            pub fn into_raw<E: Encoder>(_encoder: E) -> *mut () {
+                core::ptr::null_mut()
+            }
+        }
+
+        /// Mock struct for `esp_idf_hal::rmt::TxQueue`
+        pub struct TxQueue<'c, 'd, E> {
+            _marker: PhantomData<(&'c mut (), &'d mut (), E)>,
+        }
+
+        impl<'c, 'd, E> TxQueue<'c, 'd, E> {
+            pub fn new() -> Self {
+                Self {
+                    _marker: PhantomData,
+                }
+            }
+
+            pub fn push(
+                &mut self,
+                signal: &[u8],
+                _config: &config::TransmitConfig,
+            ) -> Result<(), crate::mock::esp_idf_sys::EspError> {
+                if signal.is_empty() {
+                    // Empty signals are a no-op in the mock (consistent with driver behavior)
+                    return Ok(());
+                }
+                Ok(())
+            }
+        }
+
+        /// Mock struct for `esp_idf_hal::rmt::Symbol`
+        #[derive(Debug, Clone, Copy, Default)]
+        pub struct Symbol {
+            pub level0: bool,
+            pub duration0: u16,
+            pub level1: bool,
+            pub duration1: u16,
+        }
+
+        impl Symbol {
+            pub fn new(_pulse0: Pulse, _pulse1: Pulse) -> Self {
+                Self::default()
+            }
+        }
+
+        /// Mock struct for `esp_idf_hal::rmt::Pulse`
+        pub struct Pulse;
+
+        impl Pulse {
+            pub fn new_with_duration(
+                _clock_hz: Hertz,
+                _level: super::rmt::PinState,
+                _duration: core::time::Duration,
+            ) -> Result<Self, crate::mock::esp_idf_sys::EspError> {
+                Ok(Self)
+            }
+        }
+    }
+
     /// Mock module for `esp_idf_hal::units`
     pub mod units {
         pub type ValueType = u32;
         pub type LargeValueType = u64;
 
         /// Mock struct for `esp_idf_hal::units::Hertz`
-        #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Default)]
+        #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Default)]
         pub struct Hertz(pub ValueType);
     }
 }

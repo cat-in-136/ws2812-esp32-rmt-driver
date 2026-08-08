@@ -1,18 +1,27 @@
 //! smart-leds driver wrapper API.
 
+#![allow(deprecated)] // Legacy RMT API is intentionally used when rmt-legacy feature is enabled
+
 use crate::driver::color::{LedPixelColor, LedPixelColorGrb24, LedPixelColorImpl};
 use crate::driver::{Ws2812Esp32RmtDriver, Ws2812Esp32RmtDriverError};
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 use alloc::vec::Vec;
 use core::marker::PhantomData;
-use esp_idf_hal::rmt::TxRmtDriver;
 #[cfg(feature = "alloc")]
 use smart_leds_trait::SmartLedsWrite;
-use smart_leds_trait::{RGB8, RGBW};
+use smart_leds_trait::RGB8;
+use smart_leds_trait::RGBW;
 
 #[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
-use esp_idf_hal::{gpio::OutputPin, rmt::RmtChannel};
+
+// Import the appropriate types based on feature
+#[cfg(not(feature = "rmt-legacy"))]
+use esp_idf_hal::gpio::OutputPin;
+#[cfg(feature = "rmt-legacy")]
+use esp_idf_hal::gpio::OutputPin;
+#[cfg(feature = "rmt-legacy")]
+use esp_idf_hal::rmt::{RmtChannel, TxRmtDriver};
 
 /// 8-bit RGBW (RGB + white)
 pub type RGBW8 = RGBW<u8, u8>;
@@ -47,26 +56,6 @@ impl<
 ///
 /// This is a generalization to handle variants such as SK6812-RGBW 4-color LED.
 /// Use [`Ws2812Esp32Rmt`] for typical RGB LED (WS2812B/SK6812) consisting of 8-bit GRB (total 24-bit pixel).
-///
-/// # Examples
-///
-/// ```
-/// # #[cfg(not(target_vendor = "espressif"))]
-/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-/// #
-/// use esp_idf_hal::peripherals::Peripherals;
-/// use smart_leds::{SmartLedsWrite, White};
-/// use ws2812_esp32_rmt_driver::{LedPixelEsp32Rmt, RGBW8};
-/// use ws2812_esp32_rmt_driver::driver::color::LedPixelColorGrbw32;
-///
-/// let peripherals = Peripherals::take().unwrap();
-/// let led_pin = peripherals.pins.gpio26;
-/// let channel = peripherals.rmt.channel0;
-/// let mut ws2812 = LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(channel, led_pin).unwrap();
-///
-/// let pixels = std::iter::repeat(RGBW8 {r: 0, g: 0, b: 0, a: White(30)}).take(25);
-/// ws2812.write(pixels).unwrap();
-/// ```
 pub struct LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
@@ -79,9 +68,14 @@ impl<'d, CSmart, CDev> LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
 {
-    /// Create a new driver wrapper.
-    ///
-    /// `channel` shall be different between different `pin`.
+    /// Create a new driver wrapper (new API - no channel argument).
+    #[cfg(not(feature = "rmt-legacy"))]
+    pub fn new(pin: impl OutputPin + 'd) -> Result<Self, Ws2812Esp32RmtDriverError> {
+        Self::new_with_ws2812_driver(Ws2812Esp32RmtDriver::<'d>::new(pin)?)
+    }
+
+    /// Create a new driver wrapper (legacy API - takes channel).
+    #[cfg(feature = "rmt-legacy")]
     pub fn new<C: RmtChannel + 'd>(
         channel: C,
         pin: impl OutputPin + 'd,
@@ -89,26 +83,8 @@ where
         Self::new_with_ws2812_driver(Ws2812Esp32RmtDriver::<'d>::new(channel, pin)?)
     }
 
-    /// Create a new driver wrapper with `TxRmtDriver`.
-    ///
-    /// The clock divider must be set to 1 for the `driver` configuration.
-    ///
-    /// ```
-    /// # #[cfg(not(target_vendor = "espressif"))]
-    /// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-    /// #
-    /// # use esp_idf_hal::peripherals::Peripherals;
-    /// # use esp_idf_hal::rmt::config::TransmitConfig;
-    /// # use esp_idf_hal::rmt::TxRmtDriver;
-    /// #
-    /// # let peripherals = Peripherals::take().unwrap();
-    /// # let led_pin = peripherals.pins.gpio27;
-    /// # let channel = peripherals.rmt.channel0;
-    /// #
-    /// let driver_config = TransmitConfig::new()
-    ///     .clock_divider(1); // Required parameter.
-    /// let driver = TxRmtDriver::new(channel, led_pin, &driver_config).unwrap();
-    /// ```
+    /// Create a new driver wrapper with `TxRmtDriver` (legacy only).
+    #[cfg(feature = "rmt-legacy")]
     pub fn new_with_rmt_driver(tx: TxRmtDriver<'d>) -> Result<Self, Ws2812Esp32RmtDriverError> {
         Self::new_with_ws2812_driver(Ws2812Esp32RmtDriver::<'d>::new_with_rmt_driver(tx)?)
     }
@@ -157,7 +133,36 @@ where
     }
 }
 
-#[cfg(feature = "alloc")]
+// SmartLedsWrite impl for legacy mode (requires alloc)
+#[cfg(all(feature = "rmt-legacy", feature = "alloc"))]
+impl<'d, CSmart, CDev> SmartLedsWrite for LedPixelEsp32Rmt<'d, CSmart, CDev>
+where
+    CDev: LedPixelColor + From<CSmart>,
+{
+    type Error = Ws2812Esp32RmtDriverError;
+    type Color = CSmart;
+
+    /// Writes pixel data from a color sequence to the driver
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an RMT driver error occurred.
+    fn write<T, I>(&mut self, iterator: T) -> Result<(), Self::Error>
+    where
+        T: IntoIterator<Item = I>,
+        I: Into<Self::Color>,
+    {
+        let pixel_data = iterator.into_iter().fold(Vec::new(), |mut vec, color| {
+            vec.extend_from_slice(CDev::from(color.into()).as_ref());
+            vec
+        });
+        self.driver.write_blocking(pixel_data.into_iter())?;
+        Ok(())
+    }
+}
+
+// SmartLedsWrite impl for new_api mode (alloc always available)
+#[cfg(not(feature = "rmt-legacy"))]
 impl<'d, CSmart, CDev> SmartLedsWrite for LedPixelEsp32Rmt<'d, CSmart, CDev>
 where
     CDev: LedPixelColor + From<CSmart>,
@@ -186,59 +191,6 @@ where
 
 /// 8-bit GRB (total 24-bit pixel) LED driver wrapper providing smart-leds API,
 /// Typical RGB LED (WS2812B/SK6812) driver wrapper providing smart-leds API
-///
-/// # Examples
-///
-/// ```
-/// # #[cfg(not(target_vendor = "espressif"))]
-/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-/// #
-/// use esp_idf_hal::peripherals::Peripherals;
-/// use smart_leds::{RGB8, SmartLedsWrite};
-/// use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
-///
-/// let peripherals = Peripherals::take().unwrap();
-/// let led_pin = peripherals.pins.gpio27;
-/// let channel = peripherals.rmt.channel0;
-/// let mut ws2812 = Ws2812Esp32Rmt::new(channel, led_pin).unwrap();
-///
-/// let pixels = std::iter::repeat(RGB8::new(30, 0, 0)).take(25);
-/// ws2812.write(pixels).unwrap();
-/// ```
-///
-/// The LED colors may flicker randomly when using Wi-Fi or Bluetooth with Ws2812 LEDs.
-/// This issue can be resolved by:
-///
-/// - Separating Wi-Fi/Bluetooth processing from LED control onto different cores.
-/// - Use multiple memory blocks (memory symbols) in the RMT driver.
-///
-/// To do the second option, prepare `TxRmtDriver` yourself and
-/// initialize with [`Self::new_with_rmt_driver`] as shown below.
-///
-/// ```
-/// # #[cfg(not(target_vendor = "espressif"))]
-/// # use ws2812_esp32_rmt_driver::mock::esp_idf_hal;
-/// #
-/// # use esp_idf_hal::peripherals::Peripherals;
-/// # use esp_idf_hal::rmt::config::TransmitConfig;
-/// # use esp_idf_hal::rmt::TxRmtDriver;
-/// # use smart_leds::{RGB8, SmartLedsWrite};
-/// # use ws2812_esp32_rmt_driver::Ws2812Esp32Rmt;
-/// #
-/// # let peripherals = Peripherals::take().unwrap();
-/// # let led_pin = peripherals.pins.gpio27;
-/// # let channel = peripherals.rmt.channel0;
-/// #
-/// let driver_config = TransmitConfig::new()
-///     .clock_divider(1)  // Required parameter.
-///     .mem_block_num(2); // Increase the number depending on your code.
-/// let driver = TxRmtDriver::new(channel, led_pin, &driver_config).unwrap();
-///
-/// let mut ws2812 = Ws2812Esp32Rmt::new_with_rmt_driver(driver).unwrap();
-/// #
-/// # let pixels = std::iter::repeat(RGB8::new(30, 0, 0)).take(25);
-/// # ws2812.write(pixels).unwrap();
-/// ```
 pub type Ws2812Esp32Rmt<'d> = LedPixelEsp32Rmt<'d, RGB8, LedPixelColorGrb24>;
 
 #[cfg(test)]
@@ -247,15 +199,19 @@ mod test {
     use crate::mock::esp_idf_hal::peripherals::Peripherals;
 
     #[test]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     fn test_ws2812_esp32_rmt_smart_leds() {
         let sample_data = [RGB8::new(0x00, 0x01, 0x02), RGB8::new(0x03, 0x04, 0x05)];
         let expected_values: [u8; 6] = [0x01, 0x00, 0x02, 0x04, 0x03, 0x05];
 
         let peripherals = Peripherals::take().unwrap();
         let led_pin = peripherals.pins.gpio0;
-        let channel = peripherals.rmt.channel0;
 
-        let mut ws2812 = Ws2812Esp32Rmt::new(channel, led_pin).unwrap();
+        #[cfg(not(feature = "rmt-legacy"))]
+        let mut ws2812 = Ws2812Esp32Rmt::new(led_pin).unwrap();
+        #[cfg(feature = "rmt-legacy")]
+        let mut ws2812 = Ws2812Esp32Rmt::new(peripherals.rmt.channel0, led_pin).unwrap();
+
         ws2812.write(sample_data.iter().cloned()).unwrap();
         assert_eq!(ws2812.driver.pixel_data.unwrap(), &expected_values);
     }

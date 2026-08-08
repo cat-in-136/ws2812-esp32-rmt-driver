@@ -57,6 +57,7 @@ $ cargo espflash
 |`smart-leds-trait`      |       |smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`              |
 |`std`                   |x      |use standard library `std`                                            |
 |`alloc`                 |x      |use memory allocator (heap)                                           |
+|`rmt-legacy`            |      |Use legacy RMT API (backward compatible, no_std + no_alloc support). Enables `esp-idf-hal/rmt-legacy`|
 
 Some examples:
 
@@ -65,19 +66,73 @@ Some examples:
 * `features = ["smart-leds-trait"]` to enable smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`.
 * default feature to enable just only driver API.
 
+## RMT API modes
+
+This library supports two RMT API modes:
+* **`rmt-legacy`** (optional, not default): Uses the legacy `TxRmtDriver` API from esp-idf-hal. Enabling this feature also enables `esp-idf-hal/rmt-legacy`. This is fully backward compatible with existing code. It supports `no_std` without allocator (via `heapless::Vec`).
+
+* **New API** (default, when `rmt-legacy` is NOT enabled): Uses the new `TxChannelDriver` API from esp-idf-hal 0.46+. This removes the need to manually specify an RMT channel. The `alloc` feature is required.
+
+When `rmt-legacy` feature is not enabled, the new API is automatically selected.
+
+### Legacy RMT API (rmt-legacy) vs New API
+
+```toml
+// new API - rmt-legacy not enabled
+[dependencies]
+ws2812-esp32-rmt-driver = { features = ["smart-leds-trait"] }
+
+// rmt-legacy
+[dependencies]
+ws2812-esp32-rmt-driver = { features = ["rmt-legacy", "smart-leds-trait"] }
+```
+
+Code changes:
+```rust,ignore
+// new API - rmt-legacy not enabled
+let mut driver = Ws2812Esp32Rmt::new(led_pin)?;
+
+// rmt-legacy
+let channel = peripherals.rmt.channel0;
+let mut driver = Ws2812Esp32Rmt::new(channel, led_pin)?;
+```
+
+For custom config:
+```rust,ignore
+// new API - rmt-legacy not enabled
+let config = TxChannelConfig {
+    resolution: Hertz(10_000_000),
+    ..Default::default()
+};
+let driver = Ws2812Esp32RmtDriver::new_with_config(led_pin, &config)?;
+
+// rmt-legacy
+let config = TransmitConfig::new().clock_divider(1);
+let tx = TxRmtDriver::new(channel, led_pin, &config)?;
+let driver = Ws2812Esp32RmtDriver::new_with_rmt_driver(tx)?;
+```
+
+The new API also provides non-blocking queue operations:
+```rust,ignore
+let mut driver = Ws2812Esp32RmtDriver::new(led_pin)?;
+let mut queue = driver.queue();
+queue.push(&pixel_data)?;  // non-blocking
+queue.push_blocking(&pixel_data)?;  // blocking
+```
+
 ## no_std
 
 To use `no_std`, disable `default` feature. Then, `std` feature is disabled and this library get compatible with `no_std`.
 
 Some examples:
 
-*  `default-feature = false, features = ["alloc", "embedded-graphics-core"]` to enable embedded-graphics API
+*  `default-feature = false, features = ["alloc", "rmt-legacy", "embedded-graphics-core"]` to enable embedded-graphics API
    `ws2812_esp32_rmt_driver::lib_embedded_graphics` for `no_std` environment with memory allocator.
-*  `default-feature = false, features = ["alloc", "smart-leds-trait"]` to enable smart-leds API
+*  `default-feature = false, features = ["alloc", "rmt-legacy", "smart-leds-trait"]` to enable smart-leds API
    `ws2812_esp32_rmt_driver::lib_smart_leds` for `no_std` environment with memory allocator.
-*  `default-feature = false, features = ["embedded-graphics-core"]` to enable embedded-graphics API
+*  `default-feature = false, features = ["rmt-legacy", "embedded-graphics-core"]` to enable embedded-graphics API
    `ws2812_esp32_rmt_driver::lib_embedded_graphics` for `no_std` environment without memory allocator.
-*  `default-feature = false, features = ["smart-leds-trait"]` to enable smart-leds API
+*  `default-feature = false, features = ["rmt-legacy", "smart-leds-trait"]` to enable smart-leds API
    `ws2812_esp32_rmt_driver::lib_smart_leds` for `no_std` environment without memory allocator.
 
 When using the memory allocator (heap), enable the `alloc` feature. In this case, most processing works in the same way as `std`.
@@ -85,6 +140,8 @@ When not using the memory allocator (heap), leave the `alloc` feature disabled. 
 some APIs cannot be used and processing must be changed.
 For example, in the embedded-graphics API, the pixel data storage must be prepared by the programmer
 using heapless `Vec`-like struct such as `heapless::Vec<u8, X>`.
+
+Note: The new RMT API mode (when `rmt-legacy` feature is NOT enabled) requires the `alloc` feature and does not support `no_std` without allocator.
 
 
 This library is intended for use with espidf.

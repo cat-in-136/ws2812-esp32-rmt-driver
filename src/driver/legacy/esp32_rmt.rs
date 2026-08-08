@@ -1,4 +1,8 @@
 #![cfg_attr(not(target_vendor = "espressif"), allow(dead_code))]
+#![allow(deprecated)] // Legacy RMT API is intentionally used in this module
+
+#[cfg(all(not(feature = "std"), not(target_vendor = "espressif")))]
+extern crate alloc;
 
 use core::convert::From;
 use core::error::Error;
@@ -6,10 +10,11 @@ use core::fmt;
 use core::time::Duration;
 
 #[cfg(not(target_vendor = "espressif"))]
-use core::marker::PhantomData;
-
-#[cfg(not(target_vendor = "espressif"))]
 use crate::mock::esp_idf_hal;
+#[cfg(not(target_vendor = "espressif"))]
+use crate::mock::esp_idf_sys::EspError;
+#[cfg(not(target_vendor = "espressif"))]
+use core::marker::PhantomData;
 #[cfg(target_vendor = "espressif")]
 use esp_idf_hal::rmt::{PinState, Pulse, Symbol};
 use esp_idf_hal::{
@@ -17,10 +22,13 @@ use esp_idf_hal::{
     rmt::{config::TransmitConfig, RmtChannel, TxRmtDriver},
     units::Hertz,
 };
-
-#[cfg(not(target_vendor = "espressif"))]
-use crate::mock::esp_idf_sys;
+#[cfg(target_vendor = "espressif")]
 use esp_idf_sys::EspError;
+
+#[cfg(all(not(feature = "std"), not(target_vendor = "espressif")))]
+use alloc::vec::Vec;
+#[cfg(all(feature = "std", not(target_vendor = "espressif")))]
+use std::vec::Vec;
 
 /// T0H duration time (0 code, high voltage time)
 const WS2812_T0H_NS: Duration = Duration::from_nanos(400);

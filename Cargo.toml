@@ -15,10 +15,10 @@ rust-version = "1.82"
 [dependencies]
 smart-leds-trait = { version = "0.3", optional = true }
 embedded-graphics-core = { version = "0.4", optional = true }
-heapless = "0.8"
+heapless = { version = "0.8", optional = true }
 
 [target.'cfg(target_vendor = "espressif")'.dependencies]
-esp-idf-hal = { version = "0.46", default-features = false, features = ['rmt-legacy'] }
+esp-idf-hal = { version = "0.46", default-features = false }
 esp-idf-sys = { version = "0.37", default-features = false }
 
 [target.'cfg(not(target_vendor = "espressif"))'.dependencies]
@@ -26,6 +26,7 @@ paste = "1"
 
 [features]
 default = ["std"]
+rmt-legacy = [ "esp-idf-hal/rmt-legacy" ]
 std = [ "alloc", "esp-idf-hal/std", "esp-idf-sys/std" ]
 alloc = [ "esp-idf-hal/alloc" ]
 

@@ -31,11 +31,16 @@ jobs:
         cargo build --all-features
         cargo build --no-default-features --features=alloc
         cargo build --no-default-features --features=alloc,smart-leds-trait,embedded-graphics-core
-        cargo build --no-default-features
-        cargo build --no-default-features --features=smart-leds-trait,embedded-graphics-core
+        cargo build --features=rmt-legacy
+        cargo build --features=rmt-legacy,smart-leds-trait,embedded-graphics-core
+        cargo build --no-default-features --features=rmt-legacy,alloc,smart-leds-trait,embedded-graphics-core
+        cargo build --no-default-features --features=rmt-legacy,heapless,smart-leds-trait,embedded-graphics-core
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Build examples
-      run: cargo build --examples --all-features --features=esp-idf-sys/binstart #--release
+      run: |
+        cargo build --examples --features=smart-leds-trait,embedded-graphics-core,esp-idf-sys/binstart
+        cargo build --example=m5atom_smart_leds --features=rmt-legacy,smart-leds-trait,esp-idf-sys/binstart
+        cargo build --example=m5atom_embedded_graphics --features=rmt-legacy,embedded-graphics-core,esp-idf-sys/binstart
       working-directory: ./ws2812-esp32-rmt-driver
 
   test:
@@ -59,8 +64,12 @@ jobs:
       run: |
         cargo +stable test --target x86_64-unknown-linux-gnu --lib
         cargo +stable test --target x86_64-unknown-linux-gnu --lib --all-features
-        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features std,smart-leds-trait
-        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features std,embedded-graphics-core
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features=alloc
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features=alloc,smart-leds-trait,embedded-graphics-core
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --features=rmt-legacy
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --features=rmt-legacy,smart-leds-trait,embedded-graphics-core
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features=rmt-legacy,alloc,smart-leds-trait,embedded-graphics-core
+        cargo +stable test --target x86_64-unknown-linux-gnu --lib --no-default-features --features=rmt-legacy,heapless,smart-leds-trait,embedded-graphics-core
         cargo +stable test --target x86_64-unknown-linux-gnu --doc --all-features
       working-directory: ./ws2812-esp32-rmt-driver
     - name: Publish (Dry run)
