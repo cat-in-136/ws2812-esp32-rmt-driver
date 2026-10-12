@@ -57,7 +57,7 @@ $ cargo espflash
 |`smart-leds-trait`      |       |smart-leds API `ws2812_esp32_rmt_driver::lib_smart_leds`              |
 |`std`                   |x      |use standard library `std`                                            |
 |`alloc`                 |x      |use memory allocator (heap)                                           |
-|`rmt-legacy`            |      |Use legacy RMT API (backward compatible, no_std + no_alloc support). Enables `esp-idf-hal/rmt-legacy`|
+|`rmt-legacy`            |      |Use legacy RMT API (backward compatible, no_std + no_alloc support). Enables `esp-idf-hal/rmt-legacy`. Requires ESP-IDF 5.x|
 
 Some examples:
 
@@ -70,8 +70,9 @@ Some examples:
 
 This library supports two RMT API modes:
 * **`rmt-legacy`** (optional, not default): Uses the legacy `TxRmtDriver` API from esp-idf-hal. Enabling this feature also enables `esp-idf-hal/rmt-legacy`. This is fully backward compatible with existing code. It supports `no_std` without allocator (via `heapless::Vec`).
+  **Requires ESP-IDF 5.x**: ESP-IDF 6.0 removed the legacy RMT driver, so this feature does not build against ESP-IDF 6.x.
 
-* **New API** (default, when `rmt-legacy` is NOT enabled): Uses the new `TxChannelDriver` API from esp-idf-hal 0.46+. This removes the need to manually specify an RMT channel. The `alloc` feature is required.
+* **New API** (default, when `rmt-legacy` is NOT enabled): Uses the new `TxChannelDriver` API from esp-idf-hal 0.46+. Works with ESP-IDF 5.x and 6.x. This removes the need to manually specify an RMT channel. The `alloc` feature is required.
 
 When `rmt-legacy` feature is not enabled, the new API is automatically selected.
 
