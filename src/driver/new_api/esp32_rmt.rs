@@ -211,6 +211,14 @@ pub struct Ws2812Esp32RmtDriver<'d> {
     pub pixel_data: Option<Vec<u8>>,
 }
 
+// SAFETY: `BytesEncoder` only wraps an owned RMT encoder handle and is never accessed
+// through a shared reference, so moving or sharing the driver across threads is sound
+// (same as `TxChannelDriver`, which is `Send + Sync` in esp-idf-hal).
+#[cfg(target_vendor = "espressif")]
+unsafe impl<'d> Send for Ws2812Esp32RmtDriver<'d> {}
+#[cfg(target_vendor = "espressif")]
+unsafe impl<'d> Sync for Ws2812Esp32RmtDriver<'d> {}
+
 impl<'d> Ws2812Esp32RmtDriver<'d> {
     /// Creates a WS2812 ESP32 RMT driver wrapper with default config.
     pub fn new(pin: impl OutputPin + 'd) -> Result<Self, Ws2812Esp32RmtDriverError> {
